@@ -98,12 +98,12 @@ public Task VerifySpreadsheetDocument()
 <a id='snippet-Samples.VerifyExcel.verified.csv'></a>
 ```csv
 0,First Name,Last Name,Gender,Country,Date,Age,Id,Formula
-1,Dulce,Abril,Female,United States,43023,32,1562,G2+H21594
-2,Mara,Hashimoto,Female,Great Britain,42598,25,1582,1607
-3,Philip,Gent,Male,France,42145,36,2587,2623
-4,Kathleen,Hanner,Female,United States,43023,25,3549,3574
-5,Nereida,Magwood,Female,United States,42598,58,2468,2526
-6,Gaston,Brumm,Male,United States,42145,24,2554,2578
+1,Dulce,Abril,Female,United States,2017-10-15 00:00:00,32,1562,G2+H21594
+2,Mara,Hashimoto,Female,Great Britain,2016-08-16 00:00:00,25,1582,1607
+3,Philip,Gent,Male,France,2015-05-21 00:00:00,36,2587,2623
+4,Kathleen,Hanner,Female,United States,2017-10-15 00:00:00,25,3549,3574
+5,Nereida,Magwood,Female,United States,2016-08-16 00:00:00,58,2468,2526
+6,Gaston,Brumm,Male,United States,2015-05-21 00:00:00,24,2554,2578
 ```
 <sup><a href='/src/Tests/Samples.VerifyExcel.verified.csv#L1-L7' title='Snippet source file'>snippet source</a> | <a href='#snippet-Samples.VerifyExcel.verified.csv' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

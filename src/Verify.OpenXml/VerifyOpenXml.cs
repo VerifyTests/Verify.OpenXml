@@ -26,6 +26,7 @@ public static class VerifyOpenXml
     static ConversionResult Convert(SpreadsheetDocument document, IReadOnlyDictionary<string, object> settings)
     {
         var sheets = Convert(document).ToList();
+
         var info = new Info
         {
             SheetNames = sheets.Select(_ => _.Name!),
@@ -44,20 +45,21 @@ public static class VerifyOpenXml
     static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
     {
         var workbookPart = document.WorkbookPart!;
+
         foreach (var sheet in workbookPart.Workbook.Sheets!.Elements<Sheet>())
         {
-            var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id!);
+            var worksheetPart = (WorksheetPart) workbookPart.GetPartById(sheet.Id!);
 
-            // Get shared string table for text values
-            var sharedStringPart = workbookPart.SharedStringTablePart;
-
+            var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable.Elements<SharedStringItem>().ToList();
             var builder = new StringBuilder();
 
-            foreach (var row in worksheetPart.Worksheet.Descendants<Row>().OrderBy(r => r.RowIndex))
+            foreach (var row in worksheetPart.Worksheet
+                         .Descendants<Row>()
+                         .OrderBy(r => r.RowIndex))
             {
                 foreach (var cell in row.Elements<Cell>())
                 {
-                    var cellValue = GetCellValue(cell, sharedStringPart);
+                    var cellValue = GetCellValue(cell, workbookPart, sharedStringItems);
                     builder.Append(EscapeCsvValue(cellValue));
                     builder.Append(',');
                 }
@@ -70,7 +72,7 @@ public static class VerifyOpenXml
         }
     }
 
-    private static string GetCellValue(Cell cell, SharedStringTablePart? sharedStringPart)
+    static string GetCellValue(Cell cell, WorkbookPart workbookPart, List<SharedStringItem>? sharedStringItems)
     {
         var value = cell.InnerText;
 
@@ -79,20 +81,42 @@ public static class VerifyOpenXml
             if (cell.DataType.Value == CellValues.SharedString)
             {
                 // Handle shared strings
-                if (sharedStringPart != null && int.TryParse(value, out var ssid))
+                if (sharedStringItems != null &&
+                    int.TryParse(value, out var ssid))
                 {
-                    return sharedStringPart.SharedStringTable.Elements<SharedStringItem>().ElementAt(ssid).InnerText;
+                    return sharedStringItems.ElementAt(ssid).InnerText;
                 }
             }
             else if (cell.DataType.Value == CellValues.Boolean)
             {
-                return value == "1" ? "TRUE" : "FALSE";
+                return value == "1" ? "true" : "false";
             }
             else if (cell.DataType.Value == CellValues.Date)
             {
                 if (double.TryParse(value, out var oaDate))
                 {
-                    return DateTime.FromOADate(oaDate).ToString("yyyy-MM-dd");
+                    var date = DateTime.FromOADate(oaDate);
+                    return DateFormatter.Convert(date);
+                }
+            }
+        }
+        else if (!string.IsNullOrEmpty(value))
+        {
+            // Check if this is a date based on number format
+            if (double.TryParse(value, out var numericValue))
+            {
+                if (IsCellDateFormatted(cell, workbookPart))
+                {
+                    try
+                    {
+                        var date = DateTime.FromOADate(numericValue);
+                        return DateFormatter.Convert(date);
+                    }
+                    catch (ArgumentException)
+                    {
+                        // If conversion fails, return the original numeric value
+                        return value;
+                    }
                 }
             }
         }
@@ -100,43 +124,60 @@ public static class VerifyOpenXml
         return value;
     }
 
-    static uint GetColumnIndex(string cellReference)
+    static bool IsCellDateFormatted(Cell cell, WorkbookPart workbookPart)
     {
-        if (string.IsNullOrEmpty(cellReference))
-            return 0;
-
-        // Extract column letters from cell reference (e.g., "A1" -> "A")
-        var columnName = new string(cellReference.Where(char.IsLetter).ToArray());
-        return GetColumnIndex2(columnName);
-    }
-
-    private static uint GetColumnIndex2(string columnName)
-    {
-        uint columnIndex = 0;
-        for (var i = 0; i < columnName.Length; i++)
+        if (cell.StyleIndex == null)
         {
-            columnIndex = columnIndex * 26 + (uint)(columnName[i] - 'A' + 1);
+            return false;
         }
-        return columnIndex;
-    }
 
-    private static string GetColumnName(uint columnIndex)
-    {
-        var columnName = "";
-        while (columnIndex > 0)
+        var stylesPart = workbookPart.WorkbookStylesPart;
+        if (stylesPart?.Stylesheet.CellFormats == null)
         {
-            columnIndex--;
-            columnName = (char)('A' + columnIndex % 26) + columnName;
-            columnIndex /= 26;
+            return false;
         }
-        return columnName;
+
+        var cellFormats = stylesPart.Stylesheet.CellFormats;
+        var cellFormat = cellFormats.Elements<CellFormat>().ElementAtOrDefault((int) cell.StyleIndex.Value);
+
+        if (cellFormat?.NumberFormatId == null)
+        {
+            return false;
+        }
+
+        var numberFormatId = cellFormat.NumberFormatId.Value;
+
+        // Built-in date formats (14-22, 176-180, 181-183)
+        if (numberFormatId is
+            >= 14 and <= 22 or
+            >= 176 and <= 180 or
+            >= 181 and <= 183)
+        {
+            return true;
+        }
+
+        // Check custom number formats
+        var numberingFormats = stylesPart.Stylesheet.NumberingFormats;
+        if (numberingFormats != null)
+        {
+            var numberFormat = numberingFormats.Elements<NumberingFormat>()
+                .FirstOrDefault(nf => nf.NumberFormatId != null && nf.NumberFormatId == numberFormatId);
+
+            if (numberFormat?.FormatCode != null)
+            {
+                var formatCode = numberFormat.FormatCode.Value!.ToLower();
+                // Look for common date format indicators
+                return formatCode.Contains("yyyy") || formatCode.Contains("mm") ||
+                       formatCode.Contains("dd") || formatCode.Contains('h') ||
+                       formatCode.Contains("m/d") || formatCode.Contains("d/m");
+            }
+        }
+
+        return false;
     }
 
-    private static string EscapeCsvValue(string value)
+    static string EscapeCsvValue(string value)
     {
-        if (string.IsNullOrEmpty(value))
-            return "";
-
         // Escape CSV special characters
         if (value.Contains(',') ||
             value.Contains('"') ||
