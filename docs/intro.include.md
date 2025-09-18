@@ -1,1 +1,1 @@
-Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Excel documents via [Sylvan.Data.Excel](https://github.com/MarkPflug/Sylvan.Data.Excel/).
+Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Excel documents via  [OpenXML](https://github.com/dotnet/Open-XML-SDK/).

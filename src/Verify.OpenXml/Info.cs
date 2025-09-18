@@ -1,4 +1,5 @@
 ﻿class Info
 {
-    public required IEnumerable<string> SheetNames { get; init; }
+    public required IReadOnlyList<string> SheetNames { get; init; }
+    public required IReadOnlyList<CellFormat>? CellFormats { get; init; }
 }

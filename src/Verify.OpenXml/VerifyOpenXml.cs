@@ -1,8 +1,20 @@
-﻿namespace VerifyTests;
+﻿using Argon;
+
+namespace VerifyTests;
 
 public static class VerifyOpenXml
 {
+    [ThreadStatic]
+    static SpreadsheetDocument? currentDocument;
+
+    internal static List<JsonConverter> converters =
+    [
+        new CellFormatConverter(),
+    ];
+
     public static bool Initialized { get; private set; }
+
+    internal static SpreadsheetDocument? CurrentDocument => currentDocument;
 
     public static void Initialize()
     {
@@ -15,11 +27,12 @@ public static class VerifyOpenXml
 
         VerifierSettings.RegisterStreamConverter("xlsx", (_, target, settings) => Convert(target, settings));
         VerifierSettings.RegisterFileConverter<SpreadsheetDocument>(Convert);
+        VerifierSettings.AddExtraSettings(_ => _.Converters.AddRange(converters));
     }
 
     static ConversionResult Convert(Stream stream, IReadOnlyDictionary<string, object> settings)
     {
-        using var document = SpreadsheetDocument.Open(stream, false);
+        var document = SpreadsheetDocument.Open(stream, false);
         return Convert(document, settings);
     }
 
@@ -29,21 +42,33 @@ public static class VerifyOpenXml
 
         var info = new Info
         {
-            SheetNames = sheets.Select(_ => _.Name!),
+            SheetNames = sheets.Select(_ => _.Name!).ToList(),
+            CellFormats = document.WorkbookPart!.WorkbookStylesPart?.Stylesheet.CellFormats?.Elements<CellFormat>().ToList()
         };
+
+        Task Cleanup()
+        {
+            document.Dispose();
+            return Task.CompletedTask;
+        }
+        document.Save();
+        List<Target> targets = [new Target("xlsx", _.Csv, _.Name)];
         if (sheets.Count == 1)
         {
             var (csv, _) = sheets[0];
-            return new(info, [new("csv", csv)]);
+            targets.Add(new("csv", csv));
+        }
+        else
+        {
+            targets.AddRange(sheets.Select(_ => new Target("csv", _.Csv, _.Name)));
         }
 
-        return new(
-            info,
-            sheets.Select(_ => new Target("csv", _.Csv, _.Name)));
+        return new(info, targets, Cleanup);
     }
 
     static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
     {
+        currentDocument = document;
         var workbookPart = document.WorkbookPart!;
 
         foreach (var sheet in workbookPart.Workbook.Sheets!.Elements<Sheet>())
