@@ -1,0 +1,109 @@
+# <img src="/src/icon.png" height="30px"> Verify.Sylvan.Data.Excel
+
+[![Discussions](https://img.shields.io/badge/Verify-Discussions-yellow?svg=true&label=)](https://github.com/orgs/VerifyTests/discussions)
+[![Build status](https://ci.appveyor.com/api/projects/status/q1eqcnbptyjl24hp?svg=true)](https://ci.appveyor.com/project/SimonCropp/verify-sylvan-data-excel)
+[![NuGet Status](https://img.shields.io/nuget/v/Verify.Sylvan.Data.Excel.svg)](https://www.nuget.org/packages/Verify.Sylvan.Data.Excel/)
+
+Code provided by Cédric Luthi https://github.com/0xced
+
+Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Excel documents via [Sylvan.Data.Excel](https://github.com/MarkPflug/Sylvan.Data.Excel/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
+
+Converts Excel documents (xls, xlsb and xlsx) to csv for verification.
+
+**See [Milestones](../../milestones?state=closed) for release notes.**
+
+
+## Sponsors
+
+
+### Entity Framework Extensions<!-- include: zzz. path: /docs/zzz.include.md -->
+
+[Entity Framework Extensions](https://entityframework-extensions.net/?utm_source=simoncropp&utm_medium=Verify.Sylvan.Data.Excel) is a major sponsor and is proud to contribute to the development this project.
+
+[![Entity Framework Extensions](https://raw.githubusercontent.com/VerifyTests/Verify.Sylvan.Data.Excel/refs/heads/main/docs/zzz.png)](https://entityframework-extensions.net/?utm_source=simoncropp&utm_medium=Verify.Sylvan.Data.Excel)<!-- endInclude -->
+
+
+## NuGet
+
+ * https://nuget.org/packages/Verify.Sylvan.Data.Excel
+
+
+## Usage
+
+
+### Enable Verify.OpenXml
+<!-- snippet: enable -->
+<a id='snippet-enable'></a>
+```cs
+[ModuleInitializer]
+public static void Initialize() =>
+    VerifyOpenXml.Initialize();
+```
+<sup><a href='/src/Tests/ModuleInitializer.cs#L3-L9' title='Snippet source file'>snippet source</a> | <a href='#snippet-enable' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+### Excel
+
+
+#### Verify a file
+
+<!-- snippet: VerifyExcel -->
+<a id='snippet-VerifyExcel'></a>
+```cs
+[Test]
+public Task VerifyExcel() =>
+    VerifyFile("sample.xlsx");
+```
+<sup><a href='/src/Tests/Samples.cs#L4-L10' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+#### Verify a Stream
+
+<!-- snippet: VerifyExcelStream -->
+<a id='snippet-VerifyExcelStream'></a>
+```cs
+[Test]
+public Task VerifyExcelStream()
+{
+    var stream = new MemoryStream(File.ReadAllBytes("sample.xlsx"));
+    return Verify(stream, "xlsx");
+}
+```
+<sup><a href='/src/Tests/Samples.cs#L28-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcelStream' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+#### Verify a SpreadsheetDocument
+
+<!-- snippet: SpreadsheetDocument -->
+<a id='snippet-SpreadsheetDocument'></a>
+```cs
+[Test]
+public Task VerifySpreadsheetDocument()
+{
+    using var stream = File.OpenRead("sample.xlsx");
+    using var reader = SpreadsheetDocument.Open(stream, false);
+    return Verify(reader);
+}
+```
+<sup><a href='/src/Tests/Samples.cs#L16-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-SpreadsheetDocument' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+### Example snapshot
+
+<!-- snippet: Samples.VerifyExcel.verified.csv -->
+<a id='snippet-Samples.VerifyExcel.verified.csv'></a>
+```csv
+0,First Name,Last Name,Gender,Country,Date,Age,Id,Formula
+1,Dulce,Abril,Female,United States,43023,32,1562,G2+H21594
+2,Mara,Hashimoto,Female,Great Britain,42598,25,1582,1607
+3,Philip,Gent,Male,France,42145,36,2587,2623
+4,Kathleen,Hanner,Female,United States,43023,25,3549,3574
+5,Nereida,Magwood,Female,United States,42598,58,2468,2526
+6,Gaston,Brumm,Male,United States,42145,24,2554,2578
+```
+<sup><a href='/src/Tests/Samples.VerifyExcel.verified.csv#L1-L7' title='Snippet source file'>snippet source</a> | <a href='#snippet-Samples.VerifyExcel.verified.csv' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
