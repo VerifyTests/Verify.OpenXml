@@ -1,4 +1,5 @@
 ﻿using Argon;
+using DocumentFormat.OpenXml;
 
 namespace VerifyTests;
 
@@ -32,7 +33,10 @@ public static class VerifyOpenXml
 
     static ConversionResult Convert(Stream stream, IReadOnlyDictionary<string, object> settings)
     {
-        var document = SpreadsheetDocument.Open(stream, false);
+        var document = SpreadsheetDocument.Open(stream, false, new()
+        {
+            AutoSave = false
+        });
         return Convert(document, settings);
     }
 
@@ -46,13 +50,7 @@ public static class VerifyOpenXml
             CellFormats = document.WorkbookPart!.WorkbookStylesPart?.Stylesheet.CellFormats?.Elements<CellFormat>().ToList()
         };
 
-        Task Cleanup()
-        {
-            document.Dispose();
-            return Task.CompletedTask;
-        }
-        document.Save();
-        List<Target> targets = [new Target("xlsx", _.Csv, _.Name)];
+        List<Target> targets = [new("xlsx", CloneToStream(document))];
         if (sheets.Count == 1)
         {
             var (csv, _) = sheets[0];
@@ -63,7 +61,14 @@ public static class VerifyOpenXml
             targets.AddRange(sheets.Select(_ => new Target("csv", _.Csv, _.Name)));
         }
 
-        return new(info, targets, Cleanup);
+        return new(info, targets, () =>
+        {
+            if (!document.AutoSave)
+            {
+                document.Dispose();
+            }
+            return Task.CompletedTask;
+        });
     }
 
     static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
@@ -216,5 +221,48 @@ public static class VerifyOpenXml
         }
 
         return value;
+    }
+
+
+    public static MemoryStream CloneToStream(SpreadsheetDocument sourceDocument)
+    {
+        var memoryStream = new MemoryStream();
+        using (var targetDocument = SpreadsheetDocument.Create(memoryStream, SpreadsheetDocumentType.Workbook))
+        {
+            // Clone the workbook part and its content
+            var sourceWorkbookPart = sourceDocument.WorkbookPart;
+            var targetWorkbookPart = targetDocument.AddWorkbookPart();
+
+            // Copy the workbook
+            targetWorkbookPart.Workbook = new Workbook();
+            targetWorkbookPart.Workbook.InnerXml = sourceWorkbookPart!.Workbook.InnerXml;
+
+            // Copy styles if they exist
+            if (sourceWorkbookPart.WorkbookStylesPart != null)
+            {
+                var targetStylesPart = targetWorkbookPart.AddNewPart<WorkbookStylesPart>();
+                targetStylesPart.Stylesheet = new Stylesheet();
+                targetStylesPart.Stylesheet.InnerXml = sourceWorkbookPart.WorkbookStylesPart.Stylesheet.InnerXml;
+            }
+
+            // Copy shared strings if they exist
+            if (sourceWorkbookPart.SharedStringTablePart != null)
+            {
+                var targetSharedStringsPart = targetWorkbookPart.AddNewPart<SharedStringTablePart>();
+                targetSharedStringsPart.SharedStringTable = new SharedStringTable();
+                targetSharedStringsPart.SharedStringTable.InnerXml = sourceWorkbookPart.SharedStringTablePart.SharedStringTable.InnerXml;
+            }
+
+            // Copy worksheets
+            foreach (var sourceWorksheetPart in sourceWorkbookPart.WorksheetParts)
+            {
+                var targetWorksheetPart = targetWorkbookPart.AddNewPart<WorksheetPart>();
+                targetWorksheetPart.Worksheet = new Worksheet();
+                targetWorksheetPart.Worksheet.InnerXml = sourceWorksheetPart.Worksheet.InnerXml;
+            }
+
+            targetDocument.Save();
+        }
+        return memoryStream;
     }
 }
