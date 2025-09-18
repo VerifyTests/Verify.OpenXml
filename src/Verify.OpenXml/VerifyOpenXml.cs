@@ -50,7 +50,8 @@ public static class VerifyOpenXml
             CellFormats = document.WorkbookPart!.WorkbookStylesPart?.Stylesheet.CellFormats?.Elements<CellFormat>().ToList()
         };
 
-        List<Target> targets = [new("xlsx", CloneToStream(document))];
+        //new("xlsx", CloneToStream(document))
+        List<Target> targets = [];
         if (sheets.Count == 1)
         {
             var (csv, _) = sheets[0];
