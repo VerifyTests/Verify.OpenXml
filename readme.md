@@ -1,7 +1,7 @@
 # <img src="/src/icon.png" height="30px"> Verify.OpenXML
 
 [![Discussions](https://img.shields.io/badge/Verify-Discussions-yellow?svg=true&label=)](https://github.com/orgs/VerifyTests/discussions)
-[![Build status](https://ci.appveyor.com/api/projects/status/q1eqcnbptyjl24hp?svg=true)](https://ci.appveyor.com/project/SimonCropp/verify-openxml)
+[![Build status](https://ci.appveyor.com/api/projects/status/ps4hmlcmiu2rrw8i?svg=true)](https://ci.appveyor.com/project/SimonCropp/verify-openxml)
 [![NuGet Status](https://img.shields.io/nuget/v/Verify.OpenXML.svg)](https://www.nuget.org/packages/Verify.OpenXML/)
 
 Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Excel documents via  [OpenXML](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
