@@ -1,19 +1,8 @@
-﻿using Argon;
-using DeterministicIoPackaging;
-using DocumentFormat.OpenXml;
-
-namespace VerifyTests;
+﻿namespace VerifyTests;
 
 public static class VerifyOpenXml
 {
-    [ThreadStatic]
-    static SpreadsheetDocument? currentDocument;
-
-    internal static List<JsonConverter> converters = [];
-
     public static bool Initialized { get; private set; }
-
-    internal static SpreadsheetDocument? CurrentDocument => currentDocument;
 
     public static void Initialize()
     {
@@ -26,7 +15,6 @@ public static class VerifyOpenXml
 
         VerifierSettings.RegisterStreamConverter("xlsx", (_, target, settings) => Convert(target, settings));
         VerifierSettings.RegisterFileConverter<SpreadsheetDocument>(Convert);
-        VerifierSettings.AddExtraSettings(_ => _.Converters.AddRange(converters));
     }
 
     static ConversionResult Convert(Stream stream, IReadOnlyDictionary<string, object> settings)
@@ -92,7 +80,6 @@ public static class VerifyOpenXml
 
     static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
     {
-        currentDocument = document;
         var workbookPart = document.WorkbookPart!;
         var counter = Counter.Current;
 
