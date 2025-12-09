@@ -13,6 +13,11 @@ public class Samples
     public Task MultipleSheets() =>
         VerifyFile("sample_multiple_sheets.xlsx");
 
+    [Test]
+    public Task DontScrub() =>
+        VerifyFile("sample.xlsx")
+            .DontScrubGuids().DontScrubDateTimes();
+
     #region SpreadsheetDocument
 
     [Test]

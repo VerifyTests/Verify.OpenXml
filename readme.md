@@ -4,9 +4,17 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/q1eqcnbptyjl24hp?svg=true)](https://ci.appveyor.com/project/SimonCropp/verify-openxml)
 [![NuGet Status](https://img.shields.io/nuget/v/Verify.OpenXML.svg)](https://www.nuget.org/packages/Verify.OpenXML/)
 
-Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Excel documents via  [OpenXML](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
+Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Excel documents via [OpenXML SDK](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
 
-Converts Excel documents (xlsx) to csv for verification.
+Converts Excel documents (xlsx) to CSV for verification.
+
+## Features
+
+ * Converts workbooks to CSV format for each worksheet
+ * Extracts formulas and displays them alongside cell values
+ * Captures document metadata (title, subject, creator, keywords, category, etc.)
+ * Supports date scrubbing and GUID scrubbing for deterministic tests
+ * Generates deterministic XLSX output using DeterministicIoPackaging
 
 **See [Milestones](../../milestones?state=closed) for release notes.**
 
@@ -70,7 +78,7 @@ public Task VerifyExcelStream()
     return Verify(stream, "xlsx");
 }
 ```
-<sup><a href='/src/Tests/Samples.cs#L28-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcelStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/Samples.cs#L33-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcelStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -87,7 +95,7 @@ public Task VerifySpreadsheetDocument()
     return Verify(reader);
 }
 ```
-<sup><a href='/src/Tests/Samples.cs#L16-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-SpreadsheetDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/Samples.cs#L21-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-SpreadsheetDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 

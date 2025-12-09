@@ -1,4 +1,5 @@
 ﻿using Argon;
+using DeterministicIoPackaging;
 using DocumentFormat.OpenXml;
 
 namespace VerifyTests;
@@ -8,10 +9,7 @@ public static class VerifyOpenXml
     [ThreadStatic]
     static SpreadsheetDocument? currentDocument;
 
-    internal static List<JsonConverter> converters =
-    [
-        new CellFormatConverter(),
-    ];
+    internal static List<JsonConverter> converters = [];
 
     public static bool Initialized { get; private set; }
 
@@ -43,15 +41,35 @@ public static class VerifyOpenXml
     static ConversionResult Convert(SpreadsheetDocument document, IReadOnlyDictionary<string, object> settings)
     {
         var sheets = Convert(document).ToList();
+        var workbookPart = document.WorkbookPart!;
+
+        // Extract document properties
+        var packageProperties = document.PackageProperties;
+        var workbookProperties = workbookPart.Workbook.WorkbookProperties;
 
         var info = new Info
         {
             SheetNames = sheets.Select(_ => _.Name!).ToList(),
-            CellFormats = document.WorkbookPart!.WorkbookStylesPart?.Stylesheet.CellFormats?.Elements<CellFormat>().ToList()
+            WorksheetCount = sheets.Count,
+            Title = packageProperties.Title,
+            Subject = packageProperties.Subject,
+            Creator = packageProperties.Creator,
+            Keywords = packageProperties.Keywords,
+            Description = packageProperties.Description,
+            Category = packageProperties.Category,
+            Date1904 = workbookProperties?.Date1904?.Value,
+            CalculationMode = workbookPart.Workbook.CalculationProperties?.CalculationMode?.HasValue == true
+                ? workbookPart.Workbook.CalculationProperties.CalculationMode.Value.ToString()
+                : null
         };
 
-        //new("xlsx", CloneToStream(document))
-        List<Target> targets = [];
+        // Create deterministic XLSX output
+        using var sourceStream = new MemoryStream();
+        document.Clone(sourceStream);
+        sourceStream.Position = 0;
+        var resultStream = DeterministicPackage.Convert(sourceStream);
+
+        List<Target> targets = [new("xlsx", resultStream)];
         if (sheets.Count == 1)
         {
             var (csv, _) = sheets[0];
@@ -76,6 +94,7 @@ public static class VerifyOpenXml
     {
         currentDocument = document;
         var workbookPart = document.WorkbookPart!;
+        var counter = Counter.Current;
 
         foreach (var sheet in workbookPart.Workbook.Sheets!.Elements<Sheet>())
         {
@@ -90,8 +109,17 @@ public static class VerifyOpenXml
             {
                 foreach (var cell in row.Elements<Cell>())
                 {
-                    var cellValue = GetCellValue(cell, workbookPart, sharedStringItems);
+                    var cellValue = GetCellValue(cell, workbookPart, sharedStringItems, counter);
                     builder.Append(EscapeCsvValue(cellValue));
+
+                    // Add formula if present
+                    if (cell.CellFormula != null && !string.IsNullOrEmpty(cell.CellFormula.Text))
+                    {
+                        builder.Append(" (");
+                        builder.Append(EscapeCsvValue(cell.CellFormula.Text));
+                        builder.Append(')');
+                    }
+
                     builder.Append(',');
                 }
 
@@ -103,7 +131,7 @@ public static class VerifyOpenXml
         }
     }
 
-    static string GetCellValue(Cell cell, WorkbookPart workbookPart, List<SharedStringItem>? sharedStringItems)
+    static string GetCellValue(Cell cell, WorkbookPart workbookPart, List<SharedStringItem>? sharedStringItems, Counter counter)
     {
         var value = cell.InnerText;
 
@@ -115,7 +143,12 @@ public static class VerifyOpenXml
                 if (sharedStringItems != null &&
                     int.TryParse(value, out var ssid))
                 {
-                    return sharedStringItems.ElementAt(ssid).InnerText;
+                    var text = sharedStringItems.ElementAt(ssid).InnerText;
+                    if (counter.TryConvert(text, out var result))
+                    {
+                        return result;
+                    }
+                    return text;
                 }
             }
             else if (cell.DataType.Value == CellValues.Boolean)
@@ -127,7 +160,12 @@ public static class VerifyOpenXml
                 if (double.TryParse(value, out var oaDate))
                 {
                     var date = DateTime.FromOADate(oaDate);
-                    return DateFormatter.Convert(date);
+                    var dateString = DateFormatter.Convert(date);
+                    if (counter.TryConvert(dateString, out var result))
+                    {
+                        return result;
+                    }
+                    return dateString;
                 }
             }
         }
@@ -141,7 +179,12 @@ public static class VerifyOpenXml
                     try
                     {
                         var date = DateTime.FromOADate(numericValue);
-                        return DateFormatter.Convert(date);
+                        var dateString = DateFormatter.Convert(date);
+                        if (counter.TryConvert(dateString, out var result))
+                        {
+                            return result;
+                        }
+                        return dateString;
                     }
                     catch (ArgumentException)
                     {
@@ -150,6 +193,12 @@ public static class VerifyOpenXml
                     }
                 }
             }
+        }
+
+        // Try to scrub GUIDs and other text values
+        if (counter.TryConvert(value, out var scrubbedValue))
+        {
+            return scrubbedValue;
         }
 
         return value;
@@ -222,48 +271,5 @@ public static class VerifyOpenXml
         }
 
         return value;
-    }
-
-
-    public static MemoryStream CloneToStream(SpreadsheetDocument sourceDocument)
-    {
-        var memoryStream = new MemoryStream();
-        using (var targetDocument = SpreadsheetDocument.Create(memoryStream, SpreadsheetDocumentType.Workbook))
-        {
-            // Clone the workbook part and its content
-            var sourceWorkbookPart = sourceDocument.WorkbookPart;
-            var targetWorkbookPart = targetDocument.AddWorkbookPart();
-
-            // Copy the workbook
-            targetWorkbookPart.Workbook = new Workbook();
-            targetWorkbookPart.Workbook.InnerXml = sourceWorkbookPart!.Workbook.InnerXml;
-
-            // Copy styles if they exist
-            if (sourceWorkbookPart.WorkbookStylesPart != null)
-            {
-                var targetStylesPart = targetWorkbookPart.AddNewPart<WorkbookStylesPart>();
-                targetStylesPart.Stylesheet = new Stylesheet();
-                targetStylesPart.Stylesheet.InnerXml = sourceWorkbookPart.WorkbookStylesPart.Stylesheet.InnerXml;
-            }
-
-            // Copy shared strings if they exist
-            if (sourceWorkbookPart.SharedStringTablePart != null)
-            {
-                var targetSharedStringsPart = targetWorkbookPart.AddNewPart<SharedStringTablePart>();
-                targetSharedStringsPart.SharedStringTable = new SharedStringTable();
-                targetSharedStringsPart.SharedStringTable.InnerXml = sourceWorkbookPart.SharedStringTablePart.SharedStringTable.InnerXml;
-            }
-
-            // Copy worksheets
-            foreach (var sourceWorksheetPart in sourceWorkbookPart.WorksheetParts)
-            {
-                var targetWorksheetPart = targetWorkbookPart.AddNewPart<WorksheetPart>();
-                targetWorksheetPart.Worksheet = new Worksheet();
-                targetWorksheetPart.Worksheet.InnerXml = sourceWorksheetPart.Worksheet.InnerXml;
-            }
-
-            targetDocument.Save();
-        }
-        return memoryStream;
     }
 }
