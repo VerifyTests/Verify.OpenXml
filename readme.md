@@ -39,6 +39,7 @@ Converts Excel documents (xlsx) to CSV for verification.
 
 
 ### Enable Verify.OpenXml
+
 <!-- snippet: enable -->
 <a id='snippet-enable'></a>
 ```cs
