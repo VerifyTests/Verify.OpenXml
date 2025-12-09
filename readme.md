@@ -4,7 +4,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/q1eqcnbptyjl24hp?svg=true)](https://ci.appveyor.com/project/SimonCropp/verify-openxml)
 [![NuGet Status](https://img.shields.io/nuget/v/Verify.OpenXML.svg)](https://www.nuget.org/packages/Verify.OpenXML/)
 
-Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Excel documents via [OpenXML SDK](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
+Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Excel documents via  [OpenXML](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
 
 Converts Excel documents (xlsx) to CSV for verification.
 
@@ -105,7 +105,7 @@ public Task VerifySpreadsheetDocument()
 <a id='snippet-Samples.VerifyExcel.verified.csv'></a>
 ```csv
 0,First Name,Last Name,Gender,Country,Date,Age,Id,Formula
-1,Dulce,Abril,Female,United States,2017-10-15,32,1562,G2+H21594
+1,Dulce,Abril,Female,United States,2017-10-15,32,1562,G2+H21594 (G2+H2)
 2,Mara,Hashimoto,Female,Great Britain,2016-08-16,25,1582,1607
 3,Philip,Gent,Male,France,2015-05-21,36,2587,2623
 4,Kathleen,Hanner,Female,United States,2017-10-15,25,3549,3574
