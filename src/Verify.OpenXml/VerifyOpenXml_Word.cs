@@ -150,15 +150,15 @@ public static partial class VerifyOpenXml
             }
             else if (property.VTInt32 != null)
             {
-                value = int.Parse(property.VTInt32.Text!);
+                value = int.Parse(property.VTInt32.Text);
             }
             else if (property.VTFloat != null)
             {
-                value = float.Parse(property.VTFloat.Text!);
+                value = float.Parse(property.VTFloat.Text);
             }
             else if (property.VTDouble != null)
             {
-                value = double.Parse(property.VTDouble.Text!);
+                value = double.Parse(property.VTDouble.Text);
             }
             else if (property.VTDate != null)
             {
@@ -177,15 +177,15 @@ public static partial class VerifyOpenXml
 
     static string? GetWordDocumentText(WordprocessingDocument document)
     {
-        var mainPart = document.MainDocumentPart;
-        if (mainPart?.Document.Body == null)
+        var body = document.MainDocumentPart?.Document.Body;
+
+        if (body == null)
         {
             return null;
         }
 
         var builder = new StringBuilder();
-
-        foreach (var paragraph in mainPart.Document.Body.Elements<Paragraph>())
+        foreach (var paragraph in body.Elements<Paragraph>())
         {
             var paragraphText = GetWordParagraphText(paragraph);
             if (!string.IsNullOrEmpty(paragraphText))
@@ -195,7 +195,7 @@ public static partial class VerifyOpenXml
         }
 
         // Also get text from tables
-        foreach (var table in mainPart.Document.Body.Elements<WordTable>())
+        foreach (var table in body.Elements<WordTable>())
         {
             foreach (var row in table.Elements<TableRow>())
             {
@@ -222,7 +222,12 @@ public static partial class VerifyOpenXml
             }
         }
 
-        var result = builder.ToString().TrimEnd();
+        builder.TrimEnd();
+        if (builder.Length == 0)
+        {
+            return null;
+        }
+        var result = builder.ToString();
         return string.IsNullOrEmpty(result) ? null : result;
     }
 
@@ -244,9 +249,9 @@ public static partial class VerifyOpenXml
             }
 
             // Handle breaks
-            foreach (var br in run.Elements<WordBreak>())
+            foreach (var wordBreak in run.Elements<WordBreak>())
             {
-                if (br.Type?.Value == BreakValues.Page)
+                if (wordBreak.Type?.Value == BreakValues.Page)
                 {
                     builder.AppendLine();
                     builder.AppendLine("--- Page Break ---");
