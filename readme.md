@@ -4,17 +4,27 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/ps4hmlcmiu2rrw8i?svg=true)](https://ci.appveyor.com/project/SimonCropp/verify-openxml)
 [![NuGet Status](https://img.shields.io/nuget/v/Verify.OpenXML.svg)](https://www.nuget.org/packages/Verify.OpenXML/)
 
-Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Excel documents via  [OpenXML](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
+Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of documents via [OpenXML](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
 
-Converts Excel documents (xlsx) to CSV for verification.
+Supports Excel (xlsx) and Word (docx) documents.
 
 ## Features
+
+### Excel (xlsx)
 
  * Converts workbooks to CSV format for each worksheet
  * Extracts formulas and displays them alongside cell values
  * Captures document metadata (title, subject, creator, keywords, category, etc.)
  * Supports date scrubbing and GUID scrubbing for deterministic tests
  * Generates deterministic XLSX output using DeterministicIoPackaging
+
+### Word (docx)
+
+ * Extracts document text content from paragraphs and tables
+ * Captures document properties (title, subject, creator, keywords, etc.)
+ * Captures custom document properties
+ * Extracts font information
+ * Generates deterministic DOCX output using DeterministicIoPackaging
 
 **See [Milestones](../../milestones?state=closed) for release notes.**
 
@@ -100,7 +110,7 @@ public Task VerifySpreadsheetDocument()
 <!-- endSnippet -->
 
 
-### Example snapshot
+#### Example snapshot
 
 <!-- snippet: Samples.VerifyExcel.verified.csv -->
 <a id='snippet-Samples.VerifyExcel.verified.csv'></a>
@@ -114,4 +124,53 @@ public Task VerifySpreadsheetDocument()
 6,Gaston,Brumm,Male,United States,2015-05-21,24,2554,2578
 ```
 <sup><a href='/src/Tests/Samples.VerifyExcel.verified.csv#L1-L7' title='Snippet source file'>snippet source</a> | <a href='#snippet-Samples.VerifyExcel.verified.csv' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+### Word
+
+
+#### Verify a file
+
+<!-- snippet: VerifyWord -->
+<a id='snippet-VerifyWord'></a>
+```cs
+[Test]
+public Task VerifyWord() =>
+    VerifyFile("sample.docx");
+```
+<sup><a href='/src/Tests/Samples.cs#L44-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWord' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+#### Verify a Stream
+
+<!-- snippet: VerifyWordStream -->
+<a id='snippet-VerifyWordStream'></a>
+```cs
+[Test]
+public Task VerifyWordStream()
+{
+    var stream = new MemoryStream(File.ReadAllBytes("sample.docx"));
+    return Verify(stream, "docx");
+}
+```
+<sup><a href='/src/Tests/Samples.cs#L64-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWordStream' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+#### Verify a WordprocessingDocument
+
+<!-- snippet: WordprocessingDocument -->
+<a id='snippet-WordprocessingDocument'></a>
+```cs
+[Test]
+public Task VerifyWordprocessingDocument()
+{
+    using var stream = File.OpenRead("sample.docx");
+    using var reader = WordprocessingDocument.Open(stream, false);
+    return Verify(reader);
+}
+```
+<sup><a href='/src/Tests/Samples.cs#L52-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

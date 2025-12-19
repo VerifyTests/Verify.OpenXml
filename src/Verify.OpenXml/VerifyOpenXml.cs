@@ -1,6 +1,6 @@
 ﻿namespace VerifyTests;
 
-public static class VerifyOpenXml
+public static partial class VerifyOpenXml
 {
     public static bool Initialized { get; private set; }
 
@@ -13,20 +13,23 @@ public static class VerifyOpenXml
 
         Initialized = true;
 
-        VerifierSettings.RegisterStreamConverter("xlsx", (_, target, settings) => Convert(target, settings));
-        VerifierSettings.RegisterFileConverter<SpreadsheetDocument>(Convert);
+        VerifierSettings.RegisterStreamConverter("xlsx", (_, target, settings) => ConvertExcel(target, settings));
+        VerifierSettings.RegisterFileConverter<SpreadsheetDocument>(ConvertExcel);
+
+        VerifierSettings.RegisterStreamConverter("docx", (_, target, settings) => ConvertWord(target, settings));
+        VerifierSettings.RegisterFileConverter<WordprocessingDocument>(ConvertWord);
     }
 
-    static ConversionResult Convert(Stream stream, IReadOnlyDictionary<string, object> settings)
+    static ConversionResult ConvertExcel(Stream stream, IReadOnlyDictionary<string, object> settings)
     {
         var document = SpreadsheetDocument.Open(stream, false, new()
         {
             AutoSave = false
         });
-        return Convert(document, settings);
+        return ConvertExcel(document, settings);
     }
 
-    static ConversionResult Convert(SpreadsheetDocument document, IReadOnlyDictionary<string, object> settings)
+    static ConversionResult ConvertExcel(SpreadsheetDocument document, IReadOnlyDictionary<string, object> settings)
     {
         var sheets = Convert(document).ToList();
         var workbookPart = document.WorkbookPart!;
@@ -35,7 +38,7 @@ public static class VerifyOpenXml
         var packageProperties = document.PackageProperties;
         var workbookProperties = workbookPart.Workbook.WorkbookProperties;
 
-        var info = new Info
+        var info = new ExcelInfo
         {
             SheetNames = sheets.Select(_ => _.Name!).ToList(),
             WorksheetCount = sheets.Count,
@@ -227,7 +230,7 @@ public static class VerifyOpenXml
         var numberingFormats = stylesPart.Stylesheet.NumberingFormats;
         if (numberingFormats != null)
         {
-            var numberFormat = numberingFormats.Elements<NumberingFormat>()
+            var numberFormat = numberingFormats.Elements<DocumentFormat.OpenXml.Spreadsheet.NumberingFormat>()
                 .FirstOrDefault(nf => nf.NumberFormatId != null && nf.NumberFormatId == numberFormatId);
 
             if (numberFormat?.FormatCode != null)
