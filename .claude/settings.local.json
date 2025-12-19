@@ -6,7 +6,13 @@
       "WebFetch(domain:api.github.com)",
       "Bash(git restore:*)",
       "Bash(dotnet build:*)",
-      "Bash([ -d \"D:\\Code\\VerifyTests\\Verify.OpenXml\\src\\Verify.OpenXml\\Converters\" ])"
+      "Bash([ -d \"D:\\Code\\VerifyTests\\Verify.OpenXml\\src\\Verify.OpenXml\\Converters\" ])",
+      "Bash(ls:*)",
+      "Bash(dotnet run:*)",
+      "Bash(dotnet test:*)",
+      "Bash(for f in *.received.*)",
+      "Bash(do mv \"$f\" \"$f/received/verified\")",
+      "Bash(done)"
     ]
   }
 }

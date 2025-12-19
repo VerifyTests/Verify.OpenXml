@@ -40,4 +40,35 @@ public class Samples
     }
 
     #endregion
+
+    #region VerifyWord
+
+    [Test]
+    public Task VerifyWord() =>
+        VerifyFile("sample.docx");
+
+    #endregion
+
+    #region WordprocessingDocument
+
+    [Test]
+    public Task VerifyWordprocessingDocument()
+    {
+        using var stream = File.OpenRead("sample.docx");
+        using var reader = WordprocessingDocument.Open(stream, false);
+        return Verify(reader);
+    }
+
+    #endregion
+
+    #region VerifyWordStream
+
+    [Test]
+    public Task VerifyWordStream()
+    {
+        var stream = new MemoryStream(File.ReadAllBytes("sample.docx"));
+        return Verify(stream, "docx");
+    }
+
+    #endregion
 }

@@ -1,4 +1,4 @@
-﻿class Info
+﻿class ExcelInfo
 {
     public required IReadOnlyList<string> SheetNames { get; init; }
     public required int WorksheetCount { get; init; }
