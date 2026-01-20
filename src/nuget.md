@@ -1,6 +1,6 @@
 [Documentation](https://github.com/VerifyTests/Verify.Sylvan.Data.Excel)
 
-Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Excel documents via  [OpenXML](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
+Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Word and Excel documents via [OpenXML](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
 
 **See [Milestones](https://github.com/VerifyTests/Verify.Sylvan.Data.Excel/milestones?state=closed) for release notes.**
 
