@@ -99,11 +99,11 @@ public Task VerifyExcelStream()
 <a id='snippet-SpreadsheetDocument'></a>
 ```cs
 [Test]
-public Task VerifySpreadsheetDocument()
+public async Task VerifySpreadsheetDocument()
 {
-    using var stream = File.OpenRead("sample.xlsx");
+    await using var stream = File.OpenRead("sample.xlsx");
     using var reader = SpreadsheetDocument.Open(stream, false);
-    return Verify(reader);
+    await Verify(reader);
 }
 ```
 <sup><a href='/src/Tests/Samples.cs#L21-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-SpreadsheetDocument' title='Start of snippet'>anchor</a></sup>
@@ -165,11 +165,11 @@ public Task VerifyWordStream()
 <a id='snippet-WordprocessingDocument'></a>
 ```cs
 [Test]
-public Task VerifyWordprocessingDocument()
+public async Task VerifyWordprocessingDocument()
 {
-    using var stream = File.OpenRead("sample.docx");
+    await using var stream = File.OpenRead("sample.docx");
     using var reader = WordprocessingDocument.Open(stream, false);
-    return Verify(reader);
+    await Verify(reader);
 }
 ```
 <sup><a href='/src/Tests/Samples.cs#L52-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>

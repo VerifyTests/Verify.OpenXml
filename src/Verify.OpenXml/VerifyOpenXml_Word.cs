@@ -177,7 +177,7 @@ public static partial class VerifyOpenXml
 
     static string? GetWordDocumentText(WordprocessingDocument document)
     {
-        var body = document.MainDocumentPart?.Document.Body;
+        var body = document.MainDocumentPart?.Document?.Body;
 
         if (body == null)
         {
@@ -217,7 +217,7 @@ public static partial class VerifyOpenXml
 
                 if (rowTexts.Count > 0)
                 {
-                    builder.AppendLine(string.Join("\t", rowTexts));
+                    builder.AppendLine(string.Join('\t', rowTexts));
                 }
             }
         }

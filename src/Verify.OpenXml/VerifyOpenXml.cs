@@ -36,7 +36,7 @@ public static partial class VerifyOpenXml
 
         // Extract document properties
         var packageProperties = document.PackageProperties;
-        var workbookProperties = workbookPart.Workbook.WorkbookProperties;
+        var workbookProperties = workbookPart.Workbook?.WorkbookProperties;
 
         var info = new ExcelInfo
         {
@@ -49,7 +49,7 @@ public static partial class VerifyOpenXml
             Description = packageProperties.Description,
             Category = packageProperties.Category,
             Date1904 = workbookProperties?.Date1904?.Value,
-            CalculationMode = workbookPart.Workbook.CalculationProperties?.CalculationMode?.HasValue == true
+            CalculationMode = workbookPart.Workbook?.CalculationProperties?.CalculationMode?.HasValue == true
                 ? workbookPart.Workbook.CalculationProperties.CalculationMode.Value.ToString()
                 : null
         };
@@ -86,16 +86,16 @@ public static partial class VerifyOpenXml
         var workbookPart = document.WorkbookPart!;
         var counter = Counter.Current;
 
-        foreach (var sheet in workbookPart.Workbook.Sheets!.Elements<Sheet>())
+        foreach (var sheet in workbookPart.Workbook!.Sheets!.Elements<Sheet>())
         {
             var worksheetPart = (WorksheetPart) workbookPart.GetPartById(sheet.Id!);
 
-            var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable.Elements<SharedStringItem>().ToList();
+            var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable?.Elements<SharedStringItem>().ToList();
             var builder = new StringBuilder();
 
-            foreach (var row in worksheetPart.Worksheet
+            foreach (var row in worksheetPart.Worksheet!
                          .Descendants<Row>()
-                         .OrderBy(r => r.RowIndex))
+                         .OrderBy(_ => _.RowIndex))
             {
                 foreach (var cell in row.Elements<Cell>())
                 {
@@ -202,7 +202,7 @@ public static partial class VerifyOpenXml
         }
 
         var stylesPart = workbookPart.WorkbookStylesPart;
-        if (stylesPart?.Stylesheet.CellFormats == null)
+        if (stylesPart?.Stylesheet?.CellFormats == null)
         {
             return false;
         }
@@ -231,7 +231,7 @@ public static partial class VerifyOpenXml
         if (numberingFormats != null)
         {
             var numberFormat = numberingFormats.Elements<DocumentFormat.OpenXml.Spreadsheet.NumberingFormat>()
-                .FirstOrDefault(nf => nf.NumberFormatId != null && nf.NumberFormatId == numberFormatId);
+                .FirstOrDefault(_ => _.NumberFormatId != null && _.NumberFormatId == numberFormatId);
 
             if (numberFormat?.FormatCode != null)
             {

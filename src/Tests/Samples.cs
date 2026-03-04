@@ -21,11 +21,11 @@ public class Samples
     #region SpreadsheetDocument
 
     [Test]
-    public Task VerifySpreadsheetDocument()
+    public async Task VerifySpreadsheetDocument()
     {
-        using var stream = File.OpenRead("sample.xlsx");
+        await using var stream = File.OpenRead("sample.xlsx");
         using var reader = SpreadsheetDocument.Open(stream, false);
-        return Verify(reader);
+        await Verify(reader);
     }
 
     #endregion
@@ -52,11 +52,11 @@ public class Samples
     #region WordprocessingDocument
 
     [Test]
-    public Task VerifyWordprocessingDocument()
+    public async Task VerifyWordprocessingDocument()
     {
-        using var stream = File.OpenRead("sample.docx");
+        await using var stream = File.OpenRead("sample.docx");
         using var reader = WordprocessingDocument.Open(stream, false);
-        return Verify(reader);
+        await Verify(reader);
     }
 
     #endregion
