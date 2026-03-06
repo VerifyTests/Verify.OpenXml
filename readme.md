@@ -33,7 +33,7 @@ Supports Excel (xlsx) and Word (docx) documents.
 ## Sponsors
 
 
-### Entity Framework Extensions<!-- include: zzz. path: /docs/zzz.include.md -->
+### Entity Framework Extensions<!-- include: sponsors. path: /docs/sponsors.include.md -->
 
 [Entity Framework Extensions](https://entityframework-extensions.net/?utm_source=simoncropp&utm_medium=Verify.OpenXML) is a major sponsor and is proud to contribute to the development this project.
 
