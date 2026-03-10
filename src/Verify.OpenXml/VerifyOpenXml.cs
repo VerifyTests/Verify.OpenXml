@@ -22,7 +22,7 @@ public static partial class VerifyOpenXml
 
     static ConversionResult ConvertExcel(Stream stream, IReadOnlyDictionary<string, object> settings)
     {
-        var document = SpreadsheetDocument.Open(stream, false, new()
+        using var document = SpreadsheetDocument.Open(stream, false, new()
         {
             AutoSave = false
         });
@@ -71,14 +71,7 @@ public static partial class VerifyOpenXml
             targets.AddRange(sheets.Select(_ => new Target("csv", _.Csv, _.Name)));
         }
 
-        return new(info, targets, () =>
-        {
-            if (!document.AutoSave)
-            {
-                document.Dispose();
-            }
-            return Task.CompletedTask;
-        });
+        return new(info, targets);
     }
 
     static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)

@@ -10,7 +10,7 @@ public static partial class VerifyOpenXml
 {
     static ConversionResult ConvertWord(Stream stream, IReadOnlyDictionary<string, object> settings)
     {
-        var document = WordprocessingDocument.Open(stream, false, new()
+        using var document = WordprocessingDocument.Open(stream, false, new()
         {
             AutoSave = false
         });
@@ -35,15 +35,7 @@ public static partial class VerifyOpenXml
             targets.Add(new("txt", info.Text!));
         }
 
-        return new(info, targets, () =>
-        {
-            if (!document.AutoSave)
-            {
-                document.Dispose();
-            }
-
-            return Task.CompletedTask;
-        });
+        return new(info, targets);
     }
 
     static WordInfo GetWordInfo(WordprocessingDocument document)
