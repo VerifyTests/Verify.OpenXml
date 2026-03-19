@@ -15,6 +15,7 @@
     <PackageReference Include="EmptyFiles" />
     <PackageReference Include="SimpleInfoName" />
     <PackageReference Include="Verify" />
+    <PackageReference Include="DocumentFormat.OpenXml" />
     <ProjectReference Include="..\Verify.OpenXml\Verify.OpenXml.csproj" />
     <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
 
