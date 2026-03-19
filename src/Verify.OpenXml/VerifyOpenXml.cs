@@ -57,7 +57,7 @@ public static partial class VerifyOpenXml
         // Create deterministic XLSX output
         using var sourceStream = new MemoryStream();
         document.Clone(sourceStream);
-        FixPrefixedDefaultNamespaces(sourceStream);
+        sourceStream.Position = 0;
         var resultStream = DeterministicPackage.Convert(sourceStream);
 
         List<Target> targets = [new("xlsx", resultStream)];
@@ -237,60 +237,6 @@ public static partial class VerifyOpenXml
         }
 
         return false;
-    }
-
-    // The OpenXml SDK may output spreadsheetml XML with a prefixed default namespace
-    // (e.g. <x:worksheet xmlns:x="...">) instead of an unprefixed default namespace
-    // (e.g. <worksheet xmlns="...">). DeterministicIoPackaging rejects prefixed forms
-    // because tools like Spreadsheet Compare cannot open such files.
-    // This method rewrites any affected XML entries in the zip to use the unprefixed form.
-    static void FixPrefixedDefaultNamespaces(MemoryStream stream)
-    {
-        XNamespace spreadsheetNs = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
-
-        stream.Position = 0;
-        using var archive = new ZipArchive(stream, ZipArchiveMode.Update, leaveOpen: true);
-
-        foreach (var entry in archive.Entries)
-        {
-            if (!entry.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            XDocument xml;
-            using (var entryStream = entry.Open())
-            {
-                xml = XDocument.Load(entryStream);
-            }
-
-            var root = xml.Root;
-            if (root == null || root.Name.Namespace != spreadsheetNs)
-            {
-                continue;
-            }
-
-            var prefix = root.GetPrefixOfNamespace(spreadsheetNs);
-            if (string.IsNullOrEmpty(prefix))
-            {
-                continue;
-            }
-
-            var prefixedAttr = root.Attribute(XNamespace.Xmlns + prefix);
-            if (prefixedAttr == null)
-            {
-                continue;
-            }
-
-            prefixedAttr.Remove();
-            root.SetAttributeValue("xmlns", spreadsheetNs.NamespaceName);
-
-            using var entryStream2 = entry.Open();
-            entryStream2.SetLength(0);
-            xml.Save(entryStream2);
-        }
-
-        stream.Position = 0;
     }
 
     static string EscapeCsvValue(string value)
