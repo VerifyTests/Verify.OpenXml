@@ -1,6 +1,46 @@
 ﻿{
-  SheetNames: [
-    Sheet1
+  Sheets: [
+    {
+      Name: Sheet1,
+      Columns: [
+        {
+          Name: 0,
+          Width: 11.4
+        },
+        {
+          Name: First Name,
+          Width: 11.4
+        },
+        {
+          Name: Last Name,
+          Width: 11.4
+        },
+        {
+          Name: Gender,
+          Width: 11.4
+        },
+        {
+          Name: Country,
+          Width: 11.4
+        },
+        {
+          Name: Date,
+          Width: 11.4
+        },
+        {
+          Name: Age,
+          Width: 11.4
+        },
+        {
+          Name: Id,
+          Width: 11.4
+        },
+        {
+          Name: Formula,
+          Width: 11.4
+        }
+      ]
+    }
   ],
   WorksheetCount: 1,
   Title: The Title
