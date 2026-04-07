@@ -8,15 +8,20 @@ Verify.OpenXml is a [Verify](https://github.com/VerifyTests/Verify) plugin that 
 
 ## Build & Test Commands
 
+**Important:** Commands must be run from the `src/` directory (where `global.json` lives), not from the repo root.
+
 ```bash
 # Build
-dotnet build src --configuration Release
+cd src
+dotnet build --configuration Release
 
 # Run all tests
-dotnet test src --configuration Release
+cd src
+dotnet test Tests/Tests.csproj
 
 # Run a single test
-dotnet test src --configuration Release --filter "FullyQualifiedName~Samples.VerifyExcel"
+cd src
+dotnet test Tests/Tests.csproj --filter "FullyQualifiedName~Samples.VerifyExcel"
 ```
 
 Requires .NET SDK 10.0 (preview). See `src/global.json` for exact version.
