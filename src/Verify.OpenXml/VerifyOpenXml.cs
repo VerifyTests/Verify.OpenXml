@@ -38,9 +38,11 @@ public static partial class VerifyOpenXml
         var packageProperties = document.PackageProperties;
         var workbookProperties = workbookPart.Workbook?.WorkbookProperties;
 
+        var sheetInfos = BuildSheetInfos(workbookPart, sheets);
+
         var info = new ExcelInfo
         {
-            SheetNames = sheets.Select(_ => _.Name!).ToList(),
+            Sheets = sheetInfos,
             WorksheetCount = sheets.Count,
             Title = packageProperties.Title,
             Subject = packageProperties.Subject,
@@ -72,6 +74,98 @@ public static partial class VerifyOpenXml
         }
 
         return new(info, targets);
+    }
+
+    static List<SheetInfo> BuildSheetInfos(WorkbookPart workbookPart, List<(StringBuilder Csv, string? Name)> sheets)
+    {
+        var sheetInfos = new List<SheetInfo>();
+
+        foreach (var sheetElement in workbookPart.Workbook!.Sheets!.Elements<Sheet>())
+        {
+            var worksheetPart = (WorksheetPart) workbookPart.GetPartById(sheetElement.Id!);
+            var columns = GetColumnInfos(worksheetPart, workbookPart);
+            var sheetInfo = new SheetInfo
+            {
+                Name = sheetElement.Name!.Value!,
+                Columns = columns is { Count: > 0 } ? columns : null
+            };
+            sheetInfos.Add(sheetInfo);
+        }
+
+        return sheetInfos;
+    }
+
+    static List<ColumnInfo> GetColumnInfos(WorksheetPart worksheetPart, WorkbookPart workbookPart)
+    {
+        var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable?.Elements<SharedStringItem>().ToList();
+
+        // Get the first row to extract column names
+        var firstRow = worksheetPart.Worksheet!
+            .Descendants<Row>()
+            .OrderBy(_ => _.RowIndex)
+            .FirstOrDefault();
+
+        if (firstRow == null)
+        {
+            return [];
+        }
+
+        // Build a map of column index to custom width
+        var columnWidths = new Dictionary<uint, double>();
+        var columnsElement = worksheetPart.Worksheet.GetFirstChild<DocumentFormat.OpenXml.Spreadsheet.Columns>();
+        if (columnsElement != null)
+        {
+            foreach (var col in columnsElement.Elements<DocumentFormat.OpenXml.Spreadsheet.Column>())
+            {
+                if (col.CustomWidth?.Value == true &&
+                    col.Width?.Value is { } width)
+                {
+                    for (var i = col.Min!.Value; i <= col.Max!.Value; i++)
+                    {
+                        columnWidths[i] = width;
+                    }
+                }
+            }
+        }
+
+        var result = new List<ColumnInfo>();
+        uint colIndex = 1;
+
+        foreach (var cell in firstRow.Elements<Cell>())
+        {
+            var name = GetHeaderCellValue(cell, sharedStringItems);
+            double? width = columnWidths.TryGetValue(colIndex, out var w) ? Math.Round(w, 1) : null;
+
+            result.Add(new ColumnInfo
+            {
+                Name = name,
+                Width = width
+            });
+
+            colIndex++;
+        }
+
+        return result;
+    }
+
+    static string GetHeaderCellValue(Cell cell, List<SharedStringItem>? sharedStringItems)
+    {
+        var value = cell.InnerText;
+
+        if (cell.DataType?.Value == CellValues.SharedString &&
+            sharedStringItems != null &&
+            int.TryParse(value, out var ssid))
+        {
+            return sharedStringItems.ElementAt(ssid).InnerText;
+        }
+
+        if (cell.DataType?.Value == CellValues.InlineString &&
+            cell.InlineString != null)
+        {
+            return cell.InlineString.InnerText;
+        }
+
+        return value;
     }
 
     static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
