@@ -317,8 +317,15 @@ public static partial class VerifyOpenXml
         var numberingFormats = stylesPart.Stylesheet.NumberingFormats;
         if (numberingFormats != null)
         {
-            var numberFormat = numberingFormats.Elements<DocumentFormat.OpenXml.Spreadsheet.NumberingFormat>()
-                .FirstOrDefault(_ => _.NumberFormatId != null && _.NumberFormatId == numberFormatId);
+            DocumentFormat.OpenXml.Spreadsheet.NumberingFormat? numberFormat = null;
+            foreach (var format in numberingFormats.Elements<DocumentFormat.OpenXml.Spreadsheet.NumberingFormat>())
+            {
+                if (format.NumberFormatId != null && format.NumberFormatId == numberFormatId)
+                {
+                    numberFormat = format;
+                    break;
+                }
+            }
 
             if (numberFormat?.FormatCode != null)
             {
