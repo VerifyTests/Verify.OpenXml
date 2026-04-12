@@ -12,45 +12,35 @@ static class MorphRenderer
 
     static DocumentConverter? Resolve()
     {
-        var skia = TryLoad("Morph.OpenXml.Skia");
-        var imageSharp = TryLoad("Morph.OpenXml.ImageSharp");
+        var directory = Path.GetDirectoryName(typeof(MorphRenderer).Assembly.Location)!;
 
-        if (skia != null && imageSharp != null)
+        var skiaPath = Path.Combine(directory, "Morph.OpenXml.Skia.dll");
+        var imageSharpPath = Path.Combine(directory, "Morph.OpenXml.ImageSharp.dll");
+
+        var hasSkia = File.Exists(skiaPath);
+        var hasImageSharp = File.Exists(imageSharpPath);
+
+        if (hasSkia && hasImageSharp)
         {
             throw new("Cannot reference both Morph.OpenXml.Skia and Morph.OpenXml.ImageSharp. Pick one rendering backend.");
         }
 
-        if (skia != null)
+        if (hasSkia)
         {
-            return Create(skia, "WordRender.Skia.DocumentConverter");
+            return Load(skiaPath, "WordRender.Skia.DocumentConverter");
         }
 
-        if (imageSharp != null)
+        if (hasImageSharp)
         {
-            return Create(imageSharp, "WordRender.ImageSharp.DocumentConverter");
+            return Load(imageSharpPath, "WordRender.ImageSharp.DocumentConverter");
         }
 
         return null;
     }
 
-    static Assembly? TryLoad(string name)
+    static DocumentConverter Load(string assemblyPath, string typeName)
     {
-        try
-        {
-            return Assembly.Load(new AssemblyName(name));
-        }
-        catch (FileNotFoundException)
-        {
-            return null;
-        }
-        catch (FileLoadException)
-        {
-            return null;
-        }
-    }
-
-    static DocumentConverter Create(Assembly assembly, string typeName)
-    {
+        var assembly = Assembly.LoadFrom(assemblyPath);
         var type = assembly.GetType(typeName, throwOnError: true)!;
         return (DocumentConverter) Activator.CreateInstance(type)!;
     }
