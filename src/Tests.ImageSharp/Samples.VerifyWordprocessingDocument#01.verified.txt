@@ -1,0 +1,5 @@
+﻿{
+  Text:
+Hello World! This is a sample Word document.
+This is the second paragraph with some more text.
+}

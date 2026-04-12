@@ -5,6 +5,7 @@
   <ItemGroup>
     <PackageReference Include="DeterministicIoPackaging" />
     <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="Morph.OpenXml" Condition="'$(TargetFramework)' == 'net10.0'" />
     <PackageReference Include="Polyfill" PrivateAssets="all" />
     <PackageReference Include="Verify" />
     <PackageReference Include="ProjectDefaults" PrivateAssets="all" />

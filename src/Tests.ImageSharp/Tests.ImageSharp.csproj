@@ -1,0 +1,31 @@
+
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Verify.DiffPlex" />
+    <PackageReference Include="Verify.Nunit" />
+    <PackageReference Include="Argon" />
+    <PackageReference Include="DiffEngine" />
+    <PackageReference Include="EmptyFiles" />
+    <PackageReference Include="SimpleInfoName" />
+    <PackageReference Include="Verify" />
+    <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="Morph.OpenXml.ImageSharp" />
+    <ProjectReference Include="..\Verify.OpenXml\Verify.OpenXml.csproj" />
+    <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
+
+    <Compile Include="..\Tests\**\*.cs"
+             Exclude="..\Tests\obj\**\*.cs;..\Tests\bin\**\*.cs;..\Tests\ModuleInitializer.cs;..\Tests\GlobalUsings.cs"
+             LinkBase="Tests" />
+
+    <None Include="..\Tests\sample.docx" Link="sample.docx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Tests\sample.xlsx" Link="sample.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Tests\sample_multiple_sheets.xlsx" Link="sample_multiple_sheets.xlsx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
