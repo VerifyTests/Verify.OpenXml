@@ -6,11 +6,9 @@ namespace VerifyTests;
 
 static class MorphRenderer
 {
-    static readonly Lazy<DocumentConverter?> converter = new(Resolve);
+    public static DocumentConverter? Instance { get; }
 
-    public static DocumentConverter? Instance => converter.Value;
-
-    static DocumentConverter? Resolve()
+    static MorphRenderer()
     {
         var directory = Path.GetDirectoryName(typeof(MorphRenderer).Assembly.Location)!;
 
@@ -27,15 +25,12 @@ static class MorphRenderer
 
         if (hasSkia)
         {
-            return Load(skiaPath, "WordRender.Skia.DocumentConverter");
+            Instance = Load(skiaPath, "WordRender.Skia.DocumentConverter");
         }
-
-        if (hasImageSharp)
+        else if (hasImageSharp)
         {
-            return Load(imageSharpPath, "WordRender.ImageSharp.DocumentConverter");
+            Instance = Load(imageSharpPath, "WordRender.ImageSharp.DocumentConverter");
         }
-
-        return null;
     }
 
     static DocumentConverter Load(string assemblyPath, string typeName)
