@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 public static class ModuleInitializer
 {
     [ModuleInitializer]
@@ -8,8 +6,8 @@ public static class ModuleInitializer
         VerifyOpenXml.Initialize();
 
         var projectDir = ProjectDir();
-        Verifier.DerivePathInfo(
-            (sourceFile, projectDirectory, type, method) =>
+        DerivePathInfo(
+            (_, _, type, method) =>
                 new(directory: projectDir, typeName: type.Name, methodName: method.Name));
     }
 
