@@ -6,15 +6,28 @@ environment:
 build_script:
 - pwsh: |
     # Install bundled fonts (direct copy avoids COM Shell hangs on CI)
-    $fontsPath = "src/Fonts"
+    $fontsPath = Join-Path $PSScriptRoot "src/Fonts"
+    if (-not (Test-Path $fontsPath))
+    {
+        $fontsPath = "src/Fonts"
+    }
     $winFonts = "$env:WINDIR\Fonts"
     $regKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
-    Get-ChildItem -Path $fontsPath -Include *.ttf,*.otf -Recurse | ForEach-Object {
-        Copy-Item $_.FullName -Destination $winFonts -Force
-        $fontName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
-        $fontType = if ($_.Extension -eq ".otf") { "OpenType" } else { "TrueType" }
-        New-ItemProperty -Path $regKey -Name "$fontName ($fontType)" -Value $_.Name -PropertyType String -Force | Out-Null
+    Write-Host "Working dir: $(Get-Location)"
+    Write-Host "Font source: $fontsPath (exists: $(Test-Path $fontsPath))"
+    $files = @(Get-ChildItem -Path $fontsPath -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Extension -in '.ttf', '.otf' })
+    Write-Host "Found $($files.Count) font files in $fontsPath"
+    foreach ($file in $files)
+    {
+        Write-Host "Installing $($file.Name)"
+        Copy-Item $file.FullName -Destination $winFonts -Force
+        $fontName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+        $fontType = if ($file.Extension -eq ".otf") { "OpenType" } else { "TrueType" }
+        New-ItemProperty -Path $regKey -Name "$fontName ($fontType)" -Value $file.Name -PropertyType String -Force | Out-Null
     }
+    Write-Host "Aptos files now in $winFonts:"
+    Get-ChildItem -Path $winFonts -Filter 'Aptos*' | ForEach-Object { Write-Host "  $($_.Name)" }
 - pwsh: |
     Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile "./dotnet-install.ps1"
     ./dotnet-install.ps1 -JSonFile src/global.json -Architecture x64 -InstallDir 'C:\Program Files\dotnet'
