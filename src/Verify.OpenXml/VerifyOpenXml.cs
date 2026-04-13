@@ -38,7 +38,7 @@ public static partial class VerifyOpenXml
         var packageProperties = document.PackageProperties;
         var workbookProperties = workbookPart.Workbook?.WorkbookProperties;
 
-        var sheetInfos = BuildSheetInfos(workbookPart, sheets);
+        var sheetInfos = BuildSheetInfos(workbookPart);
 
         var info = new ExcelInfo
         {
@@ -76,7 +76,7 @@ public static partial class VerifyOpenXml
         return new(info, targets);
     }
 
-    static List<SheetInfo> BuildSheetInfos(WorkbookPart workbookPart, List<(StringBuilder Csv, string? Name)> sheets)
+    static List<SheetInfo> BuildSheetInfos(WorkbookPart workbookPart)
     {
         var sheetInfos = new List<SheetInfo>();
 
