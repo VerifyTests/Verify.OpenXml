@@ -204,13 +204,13 @@ The base [`Morph.OpenXml`](https://nuget.org/packages/Morph.OpenXml) package is 
 [`Morph.OpenXml.Skia`](https://nuget.org/packages/Morph.OpenXml.Skia) — uses [SkiaSharp](https://github.com/mono/SkiaSharp):
 
 ```xml
-<PackageReference Include="Morph.OpenXml.Skia" Version="0.2.0" />
+<PackageReference Include="Morph.OpenXml.Skia" />
 ```
 
 or [`Morph.OpenXml.ImageSharp`](https://nuget.org/packages/Morph.OpenXml.ImageSharp) — uses [ImageSharp](https://github.com/SixLabors/ImageSharp), fully managed:
 
 ```xml
-<PackageReference Include="Morph.OpenXml.ImageSharp" Version="0.2.0" />
+<PackageReference Include="Morph.OpenXml.ImageSharp" />
 ```
 
 The backend is detected at runtime by probing for the assembly. No code changes are needed in `ModuleInitializer.cs` — the existing `VerifyOpenXml.Initialize()` call picks it up automatically.
