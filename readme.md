@@ -25,6 +25,7 @@ Supports Excel (xlsx) and Word (docx) documents.
  * Captures custom document properties
  * Extracts font information
  * Generates deterministic DOCX output using DeterministicIoPackaging
+ * Optionally renders each page to PNG via [Morph](https://github.com/SimonCropp/Morph) (opt-in)
 
 **See [Milestones](../../milestones?state=closed) for release notes.**
 
@@ -190,3 +191,88 @@ public async Task VerifyWordprocessingDocument()
 ```
 <sup><a href='/src/Tests/Samples.cs#L52-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+
+#### Render pages to PNG (opt-in)
+
+Verify.OpenXml can additionally snapshot a rendered PNG of every page of a `.docx` using the [Morph](https://github.com/SimonCropp/Morph) renderer. This catches visual regressions (layout, fonts, images, tables) that the text-based snapshot would miss.
+
+##### Enabling rendering
+
+The base [`Morph.OpenXml`](https://nuget.org/packages/Morph.OpenXml) package is referenced automatically by Verify.OpenXml on `net10.0`. To turn on rendering, add **exactly one** backend package to the test project:
+
+[`Morph.OpenXml.Skia`](https://nuget.org/packages/Morph.OpenXml.Skia) — uses [SkiaSharp](https://github.com/mono/SkiaSharp):
+
+```xml
+<PackageReference Include="Morph.OpenXml.Skia" Version="0.2.0" />
+```
+
+or [`Morph.OpenXml.ImageSharp`](https://nuget.org/packages/Morph.OpenXml.ImageSharp) — uses [ImageSharp](https://github.com/SixLabors/ImageSharp), fully managed:
+
+```xml
+<PackageReference Include="Morph.OpenXml.ImageSharp" Version="0.2.0" />
+```
+
+The backend is detected at runtime by probing for the assembly. No code changes are needed in `ModuleInitializer.cs` — the existing `VerifyOpenXml.Initialize()` call picks it up automatically.
+
+##### Output
+
+When a backend is present, every Word verification (file, stream, or `WordprocessingDocument`) produces additional PNG targets — one per page — alongside the existing `.verified.docx` and `.verified.txt` files. For example, a two-page `VerifyWord` test produces:
+
+```
+Samples.VerifyWord.verified.docx
+Samples.VerifyWord#00.verified.txt
+Samples.VerifyWord#01.verified.txt
+Samples.VerifyWord#page01.verified.png
+Samples.VerifyWord#page02.verified.png
+```
+
+Pages are zero-padded to two digits (`page01`, `page02`, ...) so file ordering matches page order.
+
+##### Backend selection rules
+
+ * **Neither backend referenced** — rendering is silently skipped. The text and binary targets are still produced. This is the default for consumers who do not opt in.
+ * **One backend referenced** — that backend is used for all Word verifications.
+ * **Both backends referenced** — an exception is thrown on the first Word verification with a clear message. Pick one.
+
+##### Target framework support
+
+Rendering is only available on `net10.0` because Morph targets `net10.0` only. On `net472`, `net48`, `net8.0`, and `net9.0`, Word verification continues to produce only the existing text and binary targets — the rendering code is conditionally compiled out.
+
+##### Cross-platform PNG stability
+
+PNG output from Skia and ImageSharp depends on installed fonts and platform-specific rasterization. A `.verified.png` generated on one machine may not be byte-identical on another OS or with different fonts installed. Recommendations:
+
+ * Generate and commit `.verified.png` files from a single canonical machine (often a CI agent).
+ * For cross-platform CI, combine with `UniqueForOSPlatform()` so each OS gets its own `.verified.png`:
+
+```cs
+await Verify(stream, "docx")
+    .UniqueForOSPlatform();
+```
+
+ * Consider Verify's image comparison tooling (e.g. [`Verify.ImageMagick`](https://github.com/VerifyTests/Verify.ImageMagick)) for tolerance-based PNG diffing.
+
+See [Verify Naming docs](https://github.com/VerifyTests/Verify/blob/main/docs/naming.md) for the full list of `UniqueFor*` modifiers.
+
+##### Sharing one test suite across both backends
+
+For a worked example of running the same test suite against both backends side-by-side, see the [`Tests.Skia`](/src/Tests.Skia) and [`Tests.ImageSharp`](/src/Tests.ImageSharp) projects in this repository. Both projects link the source files from [`Tests`](/src/Tests) and use `DerivePathInfo` in their `ModuleInitializer` to redirect snapshots into the per-backend project directory:
+
+```cs
+[ModuleInitializer]
+public static void Initialize()
+{
+    VerifyOpenXml.Initialize();
+
+    var projectDir = ProjectDir();
+    Verifier.DerivePathInfo(
+        (sourceFile, projectDirectory, type, method) =>
+            new(directory: projectDir, typeName: type.Name, methodName: method.Name));
+}
+
+static string ProjectDir([CallerFilePath] string here = "") =>
+    Path.GetDirectoryName(here)!;
+```
+
+This pattern lets a single set of tests produce two parallel sets of `.verified.*` snapshots — one per rendering backend.

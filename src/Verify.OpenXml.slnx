@@ -12,5 +12,7 @@
     <File Path="nuget.md" />
   </Folder>
   <Project Path="Tests/Tests.csproj" />
+  <Project Path="Tests.Skia/Tests.Skia.csproj" />
+  <Project Path="Tests.ImageSharp/Tests.ImageSharp.csproj" />
   <Project Path="Verify.OpenXml/Verify.OpenXml.csproj" />
 </Solution>

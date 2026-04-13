@@ -1,0 +1,10 @@
+﻿{
+  Properties: {
+    Creator: Test Author,
+    Subject: Test Subject,
+    Title: Sample Document
+  },
+  Text:
+Hello World! This is a sample Word document.
+This is the second paragraph with some more text.
+}

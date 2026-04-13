@@ -35,8 +35,35 @@ public static partial class VerifyOpenXml
             targets.Add(new("txt", info.Text!));
         }
 
+#if NET10_0_OR_GREATER
+        AddRenderedPages(resultStream, targets);
+#endif
+
         return new(info, targets);
     }
+
+#if NET10_0_OR_GREATER
+    static void AddRenderedPages(Stream docxStream, List<Target> targets)
+    {
+        var renderer = MorphRenderer.Instance;
+        if (renderer == null)
+        {
+            return;
+        }
+
+        docxStream.Position = 0;
+        using var copy = new MemoryStream();
+        docxStream.CopyTo(copy);
+        docxStream.Position = 0;
+        copy.Position = 0;
+
+        var pages = renderer.ConvertToImageData(copy);
+        for (var i = 0; i < pages.Count; i++)
+        {
+            targets.Add(new("png", new MemoryStream(pages[i]), $"page{i + 1:D2}"));
+        }
+    }
+#endif
 
     static WordInfo GetWordInfo(WordprocessingDocument document)
     {
