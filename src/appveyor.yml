@@ -26,7 +26,7 @@ build_script:
         $fontType = if ($file.Extension -eq ".otf") { "OpenType" } else { "TrueType" }
         New-ItemProperty -Path $regKey -Name "$fontName ($fontType)" -Value $file.Name -PropertyType String -Force | Out-Null
     }
-    Write-Host "Aptos files now in $winFonts:"
+    Write-Host "Aptos files now in ${winFonts}:"
     Get-ChildItem -Path $winFonts -Filter 'Aptos*' | ForEach-Object { Write-Host "  $($_.Name)" }
 - pwsh: |
     Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile "./dotnet-install.ps1"
