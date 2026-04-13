@@ -1,4 +1,6 @@
-﻿namespace VerifyTests;
+﻿using NumberingFormat = DocumentFormat.OpenXml.Spreadsheet.NumberingFormat;
+
+namespace VerifyTests;
 
 public static partial class VerifyOpenXml
 {
@@ -95,7 +97,7 @@ public static partial class VerifyOpenXml
         return sheetInfos;
     }
 
-    static List<ColumnInfo> GetColumnInfos(WorksheetPart worksheetPart, WorkbookPart workbookPart)
+    static List<ColumnInfo>? GetColumnInfos(WorksheetPart worksheetPart, WorkbookPart workbookPart)
     {
         var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable?.Elements<SharedStringItem>().ToList();
 
@@ -107,7 +109,7 @@ public static partial class VerifyOpenXml
 
         if (firstRow == null)
         {
-            return [];
+            return null;
         }
 
         // Build a map of column index to custom width
@@ -136,11 +138,12 @@ public static partial class VerifyOpenXml
             var name = GetHeaderCellValue(cell, sharedStringItems);
             double? width = columnWidths.TryGetValue(colIndex, out var w) ? Math.Round(w, 1) : null;
 
-            result.Add(new ColumnInfo
-            {
-                Name = name,
-                Width = width
-            });
+            result.Add(
+                new()
+                {
+                    Name = name,
+                    Width = width
+                });
 
             colIndex++;
         }
@@ -295,7 +298,9 @@ public static partial class VerifyOpenXml
         }
 
         var cellFormats = stylesPart.Stylesheet.CellFormats;
-        var cellFormat = cellFormats.Elements<CellFormat>().ElementAtOrDefault((int) cell.StyleIndex.Value);
+        var cellFormat = cellFormats
+            .Elements<CellFormat>()
+            .ElementAtOrDefault((int) cell.StyleIndex.Value);
 
         if (cellFormat?.NumberFormatId == null)
         {
@@ -317,10 +322,11 @@ public static partial class VerifyOpenXml
         var numberingFormats = stylesPart.Stylesheet.NumberingFormats;
         if (numberingFormats != null)
         {
-            DocumentFormat.OpenXml.Spreadsheet.NumberingFormat? numberFormat = null;
-            foreach (var format in numberingFormats.Elements<DocumentFormat.OpenXml.Spreadsheet.NumberingFormat>())
+            NumberingFormat? numberFormat = null;
+            foreach (var format in numberingFormats.Elements<NumberingFormat>())
             {
-                if (format.NumberFormatId != null && format.NumberFormatId == numberFormatId)
+                if (format.NumberFormatId != null &&
+                    format.NumberFormatId == numberFormatId)
                 {
                     numberFormat = format;
                     break;
@@ -331,9 +337,12 @@ public static partial class VerifyOpenXml
             {
                 var formatCode = numberFormat.FormatCode.Value!.ToLower();
                 // Look for common date format indicators
-                return formatCode.Contains("yyyy") || formatCode.Contains("mm") ||
-                       formatCode.Contains("dd") || formatCode.Contains('h') ||
-                       formatCode.Contains("m/d") || formatCode.Contains("d/m");
+                return formatCode.Contains("yyyy") ||
+                       formatCode.Contains("mm") ||
+                       formatCode.Contains("dd") ||
+                       formatCode.Contains('h') ||
+                       formatCode.Contains("m/d") ||
+                       formatCode.Contains("d/m");
             }
         }
 
