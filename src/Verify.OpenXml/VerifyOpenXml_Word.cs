@@ -206,37 +206,37 @@ public static partial class VerifyOpenXml
         var builder = new StringBuilder();
         foreach (var paragraph in body.Elements<Paragraph>())
         {
-            var paragraphText = GetWordParagraphText(paragraph);
-            if (!string.IsNullOrEmpty(paragraphText))
+            if (AppendWordParagraphText(builder, paragraph))
             {
-                builder.AppendLine(paragraphText);
+                builder.AppendLine();
             }
         }
 
-        // Also get text from tables
         foreach (var table in body.Elements<WordTable>())
         {
             foreach (var row in table.Elements<TableRow>())
             {
-                var rowTexts = new List<string>();
+                var firstCell = true;
+                var anyCell = false;
                 foreach (var cell in row.Elements<TableCell>())
                 {
-                    var cellText = new StringBuilder();
-                    foreach (var paragraph in cell.Elements<Paragraph>())
+                    if (!firstCell)
                     {
-                        var paragraphText = GetWordParagraphText(paragraph);
-                        if (!string.IsNullOrEmpty(paragraphText))
-                        {
-                            cellText.Append(paragraphText);
-                        }
+                        builder.Append('\t');
                     }
 
-                    rowTexts.Add(cellText.ToString());
+                    firstCell = false;
+                    anyCell = true;
+
+                    foreach (var paragraph in cell.Elements<Paragraph>())
+                    {
+                        AppendWordParagraphText(builder, paragraph);
+                    }
                 }
 
-                if (rowTexts.Count > 0)
+                if (anyCell)
                 {
-                    builder.AppendLine(string.Join('\t', rowTexts));
+                    builder.AppendLine();
                 }
             }
         }
@@ -250,9 +250,9 @@ public static partial class VerifyOpenXml
         return string.IsNullOrEmpty(result) ? null : result;
     }
 
-    internal static string GetWordParagraphText(Paragraph paragraph)
+    internal static bool AppendWordParagraphText(StringBuilder builder, Paragraph paragraph)
     {
-        var builder = new StringBuilder();
+        var startLength = builder.Length;
 
         foreach (var run in paragraph.Elements<WordRun>())
         {
@@ -261,13 +261,11 @@ public static partial class VerifyOpenXml
                 builder.Append(text.Text);
             }
 
-            // Handle tabs
             foreach (var _ in run.Elements<TabChar>())
             {
                 builder.Append('\t');
             }
 
-            // Handle breaks
             foreach (var wordBreak in run.Elements<WordBreak>())
             {
                 if (wordBreak.Type?.Value == BreakValues.Page)
@@ -282,6 +280,6 @@ public static partial class VerifyOpenXml
             }
         }
 
-        return builder.ToString();
+        return builder.Length > startLength;
     }
 }

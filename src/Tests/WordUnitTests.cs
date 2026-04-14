@@ -89,27 +89,41 @@ public class WordUnitTests
     }
 
     [Test]
-    public void GetWordParagraphText_TextAndTab()
+    public void AppendWordParagraphText_TextAndTab()
     {
         var run = new Run(new WordText("Hi"), new TabChar());
-        Assert.That(VerifyOpenXml.GetWordParagraphText(new Paragraph(run)), Is.EqualTo("Hi\t"));
+        Assert.That(Render(new Paragraph(run)), Is.EqualTo("Hi\t"));
     }
 
     [Test]
-    public void GetWordParagraphText_PageBreak()
+    public void AppendWordParagraphText_PageBreak()
     {
         var run = new Run(new WordText("Before"), new Break { Type = BreakValues.Page });
-        var result = VerifyOpenXml.GetWordParagraphText(new Paragraph(run));
-        Assert.That(result, Does.Contain("--- Page Break ---"));
+        Assert.That(Render(new Paragraph(run)), Does.Contain("--- Page Break ---"));
     }
 
     [Test]
-    public void GetWordParagraphText_LineBreak()
+    public void AppendWordParagraphText_LineBreak()
     {
         var run = new Run(new WordText("A"), new Break());
-        var result = VerifyOpenXml.GetWordParagraphText(new Paragraph(run));
+        var result = Render(new Paragraph(run));
         Assert.That(result, Does.StartWith("A"));
         Assert.That(result, Does.Not.Contain("Page Break"));
+    }
+
+    [Test]
+    public void AppendWordParagraphText_Empty_ReturnsFalse()
+    {
+        var builder = new System.Text.StringBuilder();
+        Assert.That(VerifyOpenXml.AppendWordParagraphText(builder, new Paragraph()), Is.False);
+        Assert.That(builder.Length, Is.Zero);
+    }
+
+    static string Render(Paragraph paragraph)
+    {
+        var builder = new System.Text.StringBuilder();
+        VerifyOpenXml.AppendWordParagraphText(builder, paragraph);
+        return builder.ToString();
     }
 
     [Test]

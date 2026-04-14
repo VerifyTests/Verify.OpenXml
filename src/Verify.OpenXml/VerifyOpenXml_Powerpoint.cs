@@ -36,16 +36,23 @@ public static partial class VerifyOpenXml
     internal static PowerpointInfo GetPowerpointInfo(PresentationDocument document)
     {
         var presentationPart = document.PresentationPart;
-        var slideTexts = new List<string>();
+        var builder = new StringBuilder();
+        var slideCount = 0;
 
         if (presentationPart?.SlideParts != null)
         {
             foreach (var slidePart in presentationPart.SlideParts)
             {
-                var text = GetSlideText(slidePart);
-                if (!string.IsNullOrEmpty(text))
+                slideCount++;
+                var before = builder.Length;
+                if (before > 0)
                 {
-                    slideTexts.Add(text);
+                    builder.Append("\n---\n");
+                }
+
+                if (!AppendSlideText(builder, slidePart))
+                {
+                    builder.Length = before;
                 }
             }
         }
@@ -53,8 +60,8 @@ public static partial class VerifyOpenXml
         return new()
         {
             Properties = GetPowerpointProperties(document),
-            SlideCount = presentationPart?.SlideParts.Count() ?? 0,
-            Text = slideTexts.Count > 0 ? string.Join("\n---\n", slideTexts) : null
+            SlideCount = slideCount,
+            Text = builder.Length > 0 ? builder.ToString() : null
         };
     }
 
@@ -76,31 +83,37 @@ public static partial class VerifyOpenXml
         return properties.Count > 0 ? properties : null;
     }
 
-    internal static string GetSlideText(SlidePart slidePart)
+    internal static bool AppendSlideText(StringBuilder builder, SlidePart slidePart)
     {
-        var builder = new StringBuilder();
-
         var slide = slidePart.Slide;
         if (slide == null)
         {
-            return string.Empty;
+            return false;
         }
+
+        var startLength = builder.Length;
 
         foreach (var paragraph in slide.Descendants<PParagraph>())
         {
-            var paragraphText = new StringBuilder();
+            var paragraphStart = builder.Length;
             foreach (var text in paragraph.Descendants<PText>())
             {
-                paragraphText.Append(text.Text);
+                builder.Append(text.Text);
             }
 
-            if (paragraphText.Length > 0)
+            if (builder.Length > paragraphStart)
             {
-                builder.AppendLine(paragraphText.ToString());
+                builder.AppendLine();
             }
         }
 
-        return builder.ToString().TrimEnd();
+        if (builder.Length == startLength)
+        {
+            return false;
+        }
+
+        builder.TrimEnd();
+        return builder.Length > startLength;
     }
 }
 

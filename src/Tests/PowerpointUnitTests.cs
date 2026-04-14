@@ -1,4 +1,3 @@
-using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Presentation;
 using A = DocumentFormat.OpenXml.Drawing;
 
@@ -70,7 +69,7 @@ public class PowerpointUnitTests
     }
 
     [Test]
-    public void GetSlideText_EmptySlide_ReturnsEmpty()
+    public void AppendSlideText_EmptySlide_ReturnsFalse()
     {
         using var doc = CreateEmptyDoc();
         var slidePart = doc.PresentationPart!.AddNewPart<SlidePart>();
@@ -82,22 +81,26 @@ public class PowerpointUnitTests
                     new ApplicationNonVisualDrawingProperties()),
                 new GroupShapeProperties(new A.TransformGroup()))));
 
-        Assert.That(VerifyOpenXml.GetSlideText(slidePart), Is.EqualTo(string.Empty));
+        var builder = new System.Text.StringBuilder();
+        Assert.That(VerifyOpenXml.AppendSlideText(builder, slidePart), Is.False);
+        Assert.That(builder.Length, Is.Zero);
     }
 
     [Test]
-    public void GetSlideText_WithParagraphs()
+    public void AppendSlideText_WithParagraphs()
     {
         using var doc = CreateEmptyDoc();
         var presPart = doc.PresentationPart!;
         var slidePart = AddSlide(presPart, "Line1", "Line2");
-        var text = VerifyOpenXml.GetSlideText(slidePart);
+        var builder = new System.Text.StringBuilder();
+        Assert.That(VerifyOpenXml.AppendSlideText(builder, slidePart), Is.True);
+        var text = builder.ToString();
         Assert.That(text, Does.Contain("Line1"));
         Assert.That(text, Does.Contain("Line2"));
     }
 
     [Test]
-    public void GetSlideText_ParagraphWithNoText_SkippedFromOutput()
+    public void AppendSlideText_ParagraphWithNoText_SkippedFromOutput()
     {
         using var doc = CreateEmptyDoc();
         var presPart = doc.PresentationPart!;
@@ -105,8 +108,9 @@ public class PowerpointUnitTests
         slidePart.Slide = BuildSlide(
             new A.Paragraph(),
             new A.Paragraph(new A.Run(new A.RunProperties(), new A.Text("Only"))));
-        var text = VerifyOpenXml.GetSlideText(slidePart);
-        Assert.That(text.TrimEnd(), Is.EqualTo("Only"));
+        var builder = new System.Text.StringBuilder();
+        VerifyOpenXml.AppendSlideText(builder, slidePart);
+        Assert.That(builder.ToString(), Is.EqualTo("Only"));
     }
 
     static PresentationDocument CreateEmptyDoc()
