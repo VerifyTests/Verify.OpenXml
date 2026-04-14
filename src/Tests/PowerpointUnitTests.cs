@@ -74,7 +74,7 @@ public class PowerpointUnitTests
     {
         using var doc = CreateEmptyDoc();
         var slidePart = doc.PresentationPart!.AddNewPart<SlidePart>();
-        slidePart.Slide = new Slide(
+        slidePart.Slide = new(
             new CommonSlideData(new ShapeTree(
                 new NonVisualGroupShapeProperties(
                     new NonVisualDrawingProperties { Id = 1, Name = "" },
@@ -113,7 +113,7 @@ public class PowerpointUnitTests
     {
         var doc = PresentationDocument.Create(new MemoryStream(), PresentationDocumentType.Presentation);
         var presPart = doc.AddPresentationPart();
-        presPart.Presentation = new DocumentFormat.OpenXml.Presentation.Presentation(new SlideIdList());
+        presPart.Presentation = new(new SlideIdList());
         return doc;
     }
 
@@ -150,7 +150,7 @@ public class PowerpointUnitTests
             new ShapeProperties(),
             textBody);
 
-        return new Slide(
+        return new(
             new CommonSlideData(
                 new ShapeTree(
                     new NonVisualGroupShapeProperties(

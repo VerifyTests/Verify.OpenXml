@@ -132,7 +132,7 @@ public class ExcelUnitTests
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
         var wbPart = doc.AddWorkbookPart();
-        wbPart.Workbook = new Workbook(new Sheets());
+        wbPart.Workbook = new(new Sheets());
         var wsPart = wbPart.AddNewPart<WorksheetPart>();
 
         var sheetData = new SheetData(
@@ -147,7 +147,7 @@ public class ExcelUnitTests
             new Column { Min = 1, Max = 1, Width = 20.5, CustomWidth = true },
             new Column { Min = 2, Max = 2, Width = 10.123, CustomWidth = false });
 
-        wsPart.Worksheet = new Worksheet(columns, sheetData);
+        wsPart.Worksheet = new(columns, sheetData);
 
         var result = VerifyOpenXml.GetColumnInfos(wsPart, wbPart)!;
         Assert.That(result, Has.Count.EqualTo(2));
@@ -162,14 +162,14 @@ public class ExcelUnitTests
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
         var wbPart = doc.AddWorkbookPart();
-        wbPart.Workbook = new Workbook(new Sheets());
+        wbPart.Workbook = new(new Sheets());
         var sheets = wbPart.Workbook.GetFirstChild<Sheets>()!;
 
         AddSheet(wbPart, sheets, "Alpha", 1);
         AddSheet(wbPart, sheets, "Beta", 2);
 
         var infos = VerifyOpenXml.BuildSheetInfos(wbPart);
-        Assert.That(infos.Select(_ => _.Name), Is.EqualTo(new[] { "Alpha", "Beta" }));
+        Assert.That(infos.Select(_ => _.Name), Is.EqualTo(["Alpha", "Beta"]));
     }
 
     static SpreadsheetDocument CreateWorkbook(bool addStyles)
@@ -180,7 +180,7 @@ public class ExcelUnitTests
         if (addStyles)
         {
             var stylesPart = wbPart.AddNewPart<WorkbookStylesPart>();
-            stylesPart.Stylesheet = new Stylesheet();
+            stylesPart.Stylesheet = new();
         }
         return doc;
     }
@@ -204,7 +204,7 @@ public class ExcelUnitTests
     static void AddSheet(WorkbookPart wbPart, Sheets sheets, string name, uint id)
     {
         var wsPart = wbPart.AddNewPart<WorksheetPart>();
-        wsPart.Worksheet = new Worksheet(new SheetData());
+        wsPart.Worksheet = new(new SheetData());
         sheets.Append(new Sheet
         {
             Id = wbPart.GetIdOfPart(wsPart),

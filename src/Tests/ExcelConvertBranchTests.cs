@@ -16,13 +16,13 @@ public class ExcelConvertBranchTests
         var document = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
 
         var wbPart = document.AddWorkbookPart();
-        wbPart.Workbook = new Workbook(new Sheets());
+        wbPart.Workbook = new(new Sheets());
 
         var sst = wbPart.AddNewPart<SharedStringTablePart>();
-        sst.SharedStringTable = new SharedStringTable(new SharedStringItem(new Text("Header")));
+        sst.SharedStringTable = new(new SharedStringItem(new Text("Header")));
 
         var stylesPart = wbPart.AddNewPart<WorkbookStylesPart>();
-        stylesPart.Stylesheet = new Stylesheet(
+        stylesPart.Stylesheet = new(
             new CellFormats(
                 new CellFormat(),
                 new CellFormat { NumberFormatId = 14, ApplyNumberFormat = true }));
@@ -42,12 +42,12 @@ public class ExcelConvertBranchTests
                 new Cell
                 {
                     CellValue = new("99"),
-                    CellFormula = new CellFormula("1+98")
+                    CellFormula = new("1+98")
                 })
             {
                 RowIndex = 2u
             });
-        wsPart.Worksheet = new Worksheet(sheetData);
+        wsPart.Worksheet = new(sheetData);
 
         var sheets = wbPart.Workbook.GetFirstChild<Sheets>()!;
         sheets.Append(new Sheet

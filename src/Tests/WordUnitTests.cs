@@ -4,7 +4,6 @@ using DocumentFormat.OpenXml.VariantTypes;
 using WordFont = DocumentFormat.OpenXml.Wordprocessing.Font;
 using WordText = DocumentFormat.OpenXml.Wordprocessing.Text;
 using Body = DocumentFormat.OpenXml.Wordprocessing.Body;
-using Document = DocumentFormat.OpenXml.Wordprocessing.Document;
 using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
 using Run = DocumentFormat.OpenXml.Wordprocessing.Run;
 using TabChar = DocumentFormat.OpenXml.Wordprocessing.TabChar;
@@ -13,7 +12,6 @@ using BreakValues = DocumentFormat.OpenXml.Wordprocessing.BreakValues;
 using Table = DocumentFormat.OpenXml.Wordprocessing.Table;
 using TableRow = DocumentFormat.OpenXml.Wordprocessing.TableRow;
 using TableCell = DocumentFormat.OpenXml.Wordprocessing.TableCell;
-using Fonts = DocumentFormat.OpenXml.Wordprocessing.Fonts;
 using EmbedRegularFont = DocumentFormat.OpenXml.Wordprocessing.EmbedRegularFont;
 using EmbedBoldFont = DocumentFormat.OpenXml.Wordprocessing.EmbedBoldFont;
 using EmbedItalicFont = DocumentFormat.OpenXml.Wordprocessing.EmbedItalicFont;
@@ -28,7 +26,7 @@ public class WordUnitTests
         var stream = new MemoryStream();
         var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document);
         var main = doc.AddMainDocumentPart();
-        main.Document = new Document(body ?? new Body());
+        main.Document = new(body ?? new Body());
         return doc;
     }
 
@@ -128,7 +126,7 @@ public class WordUnitTests
     {
         using var doc = CreateDoc();
         var fontPart = doc.MainDocumentPart!.AddNewPart<FontTablePart>();
-        fontPart.Fonts = new Fonts(
+        fontPart.Fonts = new(
             MakeFont("Regular", new EmbedRegularFont { FontKey = "{x}" }),
             MakeFont("Bold", new EmbedBoldFont { FontKey = "{x}" }),
             MakeFont("Italic", new EmbedItalicFont { FontKey = "{x}" }),
@@ -137,8 +135,8 @@ public class WordUnitTests
             new WordFont());
 
         var (fonts, embedded) = VerifyOpenXml.GetWordDocumentFonts(doc);
-        Assert.That(fonts, Is.EquivalentTo(new[] { "Bold", "BoldItalic", "Italic", "NoEmbed", "Regular" }));
-        Assert.That(embedded, Is.EquivalentTo(new[] { "Bold", "BoldItalic", "Italic", "Regular" }));
+        Assert.That(fonts, Is.EquivalentTo(["Bold", "BoldItalic", "Italic", "NoEmbed", "Regular"]));
+        Assert.That(embedded, Is.EquivalentTo(["Bold", "BoldItalic", "Italic", "Regular"]));
     }
 
     [Test]
@@ -146,7 +144,7 @@ public class WordUnitTests
     {
         using var doc = CreateDoc();
         var fontPart = doc.MainDocumentPart!.AddNewPart<FontTablePart>();
-        fontPart.Fonts = new Fonts(new WordFont());
+        fontPart.Fonts = new(new WordFont());
         var (fonts, embedded) = VerifyOpenXml.GetWordDocumentFonts(doc);
         Assert.That(fonts, Is.Null);
         Assert.That(embedded, Is.Null);
@@ -229,7 +227,7 @@ public class WordUnitTests
     {
         using var doc = CreateDoc();
         var part = doc.AddCustomFilePropertiesPart();
-        part.Properties = new CustomProps();
+        part.Properties = new();
         Assert.That(VerifyOpenXml.GetWordCustomProperties(doc), Is.Null);
     }
 
