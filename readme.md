@@ -4,9 +4,9 @@
 [![Build status](https://img.shields.io/appveyor/build/SimonCropp/verify-openxml)](https://ci.appveyor.com/project/SimonCropp/verify-openxml)
 [![NuGet Status](https://img.shields.io/nuget/v/Verify.OpenXML.svg)](https://www.nuget.org/packages/Verify.OpenXML/)
 
-Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Word and Excel documents via [OpenXML](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
+Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Word, Excel, and PowerPoint documents via [OpenXML](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
 
-Supports Excel (xlsx) and Word (docx) documents.
+Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
 
 ## Features
 
@@ -26,6 +26,13 @@ Supports Excel (xlsx) and Word (docx) documents.
  * Extracts font information
  * Generates deterministic DOCX output using DeterministicIoPackaging
  * Optionally renders each page to PNG via [Morph](https://github.com/SimonCropp/Morph) (opt-in)
+
+### PowerPoint (pptx)
+
+ * Extracts slide text from every slide, separated by `---`
+ * Captures document properties (title, subject, creator, keywords, etc.)
+ * Reports slide count
+ * Generates deterministic PPTX output using DeterministicIoPackaging
 
 **See [Milestones](../../milestones?state=closed) for release notes.**
 
@@ -276,3 +283,52 @@ static string ProjectDir([CallerFilePath] string here = "") =>
 ```
 
 This pattern lets a single set of tests produce two parallel sets of `.verified.*` snapshots — one per rendering backend.
+
+
+### PowerPoint
+
+
+#### Verify a file
+
+<!-- snippet: VerifyPowerpoint -->
+<a id='snippet-VerifyPowerpoint'></a>
+```cs
+[Test]
+public Task VerifyPowerpoint() =>
+    VerifyFile("sample.pptx");
+```
+<sup><a href='/src/Tests/Samples.cs#L75-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpoint' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+#### Verify a Stream
+
+<!-- snippet: VerifyPowerpointStream -->
+<a id='snippet-VerifyPowerpointStream'></a>
+```cs
+[Test]
+public Task VerifyPowerpointStream()
+{
+    var stream = new MemoryStream(File.ReadAllBytes("sample.pptx"));
+    return Verify(stream, "pptx");
+}
+```
+<sup><a href='/src/Tests/Samples.cs#L95-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+#### Verify a PresentationDocument
+
+<!-- snippet: PresentationDocument -->
+<a id='snippet-PresentationDocument'></a>
+```cs
+[Test]
+public async Task VerifyPresentationDocument()
+{
+    await using var stream = File.OpenRead("sample.pptx");
+    using var reader = PresentationDocument.Open(stream, false);
+    await Verify(reader);
+}
+```
+<sup><a href='/src/Tests/Samples.cs#L83-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

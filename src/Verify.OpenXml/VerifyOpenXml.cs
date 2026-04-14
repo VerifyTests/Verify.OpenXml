@@ -20,6 +20,9 @@ public static partial class VerifyOpenXml
 
         VerifierSettings.RegisterStreamConverter("docx", (_, target, settings) => ConvertWord(target, settings));
         VerifierSettings.RegisterFileConverter<WordprocessingDocument>(ConvertWord);
+
+        VerifierSettings.RegisterStreamConverter("pptx", (_, target, settings) => ConvertPowerpoint(target, settings));
+        VerifierSettings.RegisterFileConverter<PresentationDocument>(ConvertPowerpoint);
     }
 
     static ConversionResult ConvertExcel(Stream stream, IReadOnlyDictionary<string, object> settings)
