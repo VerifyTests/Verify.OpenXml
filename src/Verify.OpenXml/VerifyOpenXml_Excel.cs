@@ -60,7 +60,7 @@ public static partial class VerifyOpenXml
         return new(info, targets);
     }
 
-    static List<SheetInfo> BuildSheetInfos(WorkbookPart workbookPart)
+    internal static List<SheetInfo> BuildSheetInfos(WorkbookPart workbookPart)
     {
         var sheetInfos = new List<SheetInfo>();
 
@@ -79,7 +79,7 @@ public static partial class VerifyOpenXml
         return sheetInfos;
     }
 
-    static List<ColumnInfo>? GetColumnInfos(WorksheetPart worksheetPart, WorkbookPart workbookPart)
+    internal static List<ColumnInfo>? GetColumnInfos(WorksheetPart worksheetPart, WorkbookPart workbookPart)
     {
         var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable?.Elements<SharedStringItem>().ToList();
 
@@ -133,7 +133,7 @@ public static partial class VerifyOpenXml
         return result;
     }
 
-    static string GetHeaderCellValue(Cell cell, List<SharedStringItem>? sharedStringItems)
+    internal static string GetHeaderCellValue(Cell cell, List<SharedStringItem>? sharedStringItems)
     {
         var value = cell.InnerText;
 
@@ -153,7 +153,7 @@ public static partial class VerifyOpenXml
         return value;
     }
 
-    static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
+    internal static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
     {
         var workbookPart = document.WorkbookPart!;
         var counter = Counter.Current;
@@ -266,7 +266,7 @@ public static partial class VerifyOpenXml
         return value;
     }
 
-    static bool IsCellDateFormatted(Cell cell, WorkbookPart workbookPart)
+    internal static bool IsCellDateFormatted(Cell cell, WorkbookPart workbookPart)
     {
         if (cell.StyleIndex == null)
         {
@@ -331,7 +331,7 @@ public static partial class VerifyOpenXml
         return false;
     }
 
-    static string EscapeCsvValue(string value)
+    internal static string EscapeCsvValue(string value)
     {
         // Escape CSV special characters
         if (value.Contains(',') ||

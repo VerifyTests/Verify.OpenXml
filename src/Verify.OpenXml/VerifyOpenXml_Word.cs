@@ -79,7 +79,7 @@ public static partial class VerifyOpenXml
         };
     }
 
-    static (List<string>? fonts, List<string>? embeddedFonts) GetWordDocumentFonts(WordprocessingDocument document)
+    internal static (List<string>? fonts, List<string>? embeddedFonts) GetWordDocumentFonts(WordprocessingDocument document)
     {
         var fontTablePart = document.MainDocumentPart?.FontTablePart;
         if (fontTablePart?.Fonts == null)
@@ -116,7 +116,7 @@ public static partial class VerifyOpenXml
         );
     }
 
-    static Dictionary<string, object?>? GetWordProperties(WordprocessingDocument document)
+    internal static Dictionary<string, object?>? GetWordProperties(WordprocessingDocument document)
     {
         var packageProperties = document.PackageProperties;
         var properties = new Dictionary<string, object?>();
@@ -142,7 +142,7 @@ public static partial class VerifyOpenXml
         }
     }
 
-    static Dictionary<string, object?>? GetWordCustomProperties(WordprocessingDocument document)
+    internal static Dictionary<string, object?>? GetWordCustomProperties(WordprocessingDocument document)
     {
         var customFilePropertiesPart = document.CustomFilePropertiesPart;
         if (customFilePropertiesPart?.Properties == null)
@@ -194,7 +194,7 @@ public static partial class VerifyOpenXml
         return properties.Count > 0 ? properties : null;
     }
 
-    static string? GetWordDocumentText(WordprocessingDocument document)
+    internal static string? GetWordDocumentText(WordprocessingDocument document)
     {
         var body = document.MainDocumentPart?.Document?.Body;
 
@@ -250,7 +250,7 @@ public static partial class VerifyOpenXml
         return string.IsNullOrEmpty(result) ? null : result;
     }
 
-    static string GetWordParagraphText(Paragraph paragraph)
+    internal static string GetWordParagraphText(Paragraph paragraph)
     {
         var builder = new StringBuilder();
 

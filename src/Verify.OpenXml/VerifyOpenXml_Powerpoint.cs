@@ -33,7 +33,7 @@ public static partial class VerifyOpenXml
         return new(info, targets);
     }
 
-    static PowerpointInfo GetPowerpointInfo(PresentationDocument document)
+    internal static PowerpointInfo GetPowerpointInfo(PresentationDocument document)
     {
         var presentationPart = document.PresentationPart;
         var slideTexts = new List<string>();
@@ -58,7 +58,7 @@ public static partial class VerifyOpenXml
         };
     }
 
-    static Dictionary<string, object?>? GetPowerpointProperties(PresentationDocument document)
+    internal static Dictionary<string, object?>? GetPowerpointProperties(PresentationDocument document)
     {
         var packageProperties = document.PackageProperties;
         var properties = new Dictionary<string, object?>();
@@ -76,7 +76,7 @@ public static partial class VerifyOpenXml
         return properties.Count > 0 ? properties : null;
     }
 
-    static string GetSlideText(SlidePart slidePart)
+    internal static string GetSlideText(SlidePart slidePart)
     {
         var builder = new StringBuilder();
 
