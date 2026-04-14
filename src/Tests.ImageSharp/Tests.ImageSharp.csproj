@@ -21,7 +21,7 @@
     <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
 
     <Compile Include="..\Tests\**\*.cs"
-             Exclude="..\Tests\obj\**\*.cs;..\Tests\bin\**\*.cs;..\Tests\ModuleInitializer.cs;..\Tests\GlobalUsings.cs"
+             Exclude="..\Tests\obj\**\*.cs;..\Tests\bin\**\*.cs;..\Tests\ModuleInitializer.cs;..\Tests\GlobalUsings.cs;..\Tests\WordUnitTests.cs;..\Tests\ExcelUnitTests.cs;..\Tests\ExcelConvertBranchTests.cs;..\Tests\PowerpointUnitTests.cs"
              LinkBase="Tests" />
 
     <None Include="..\Tests\sample.*" CopyToOutputDirectory="PreserveNewest" />
