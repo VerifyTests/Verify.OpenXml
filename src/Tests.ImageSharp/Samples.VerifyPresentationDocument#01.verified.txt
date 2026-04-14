@@ -1,0 +1,4 @@
+﻿{
+  SlideCount: 1,
+  Text: Hello, PowerPoint!
+}

@@ -1,4 +1,3 @@
-using DocumentFormat.OpenXml.Presentation;
 using PText = DocumentFormat.OpenXml.Drawing.Text;
 using PParagraph = DocumentFormat.OpenXml.Drawing.Paragraph;
 

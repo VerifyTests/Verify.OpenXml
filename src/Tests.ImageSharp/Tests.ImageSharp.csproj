@@ -24,8 +24,7 @@
              Exclude="..\Tests\obj\**\*.cs;..\Tests\bin\**\*.cs;..\Tests\ModuleInitializer.cs;..\Tests\GlobalUsings.cs"
              LinkBase="Tests" />
 
-    <None Include="..\Tests\sample.docx" Link="sample.docx" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Tests\sample.xlsx" Link="sample.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Tests\sample.*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Tests\sample_multiple_sheets.xlsx" Link="sample_multiple_sheets.xlsx" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
