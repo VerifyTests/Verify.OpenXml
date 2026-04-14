@@ -71,4 +71,35 @@ public class Samples
     }
 
     #endregion
+
+    #region VerifyPowerpoint
+
+    [Test]
+    public Task VerifyPowerpoint() =>
+        VerifyFile("sample.pptx");
+
+    #endregion
+
+    #region PresentationDocument
+
+    [Test]
+    public async Task VerifyPresentationDocument()
+    {
+        await using var stream = File.OpenRead("sample.pptx");
+        using var reader = PresentationDocument.Open(stream, false);
+        await Verify(reader);
+    }
+
+    #endregion
+
+    #region VerifyPowerpointStream
+
+    [Test]
+    public Task VerifyPowerpointStream()
+    {
+        var stream = new MemoryStream(File.ReadAllBytes("sample.pptx"));
+        return Verify(stream, "pptx");
+    }
+
+    #endregion
 }
