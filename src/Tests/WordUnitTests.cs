@@ -92,21 +92,21 @@ public class WordUnitTests
     public void AppendWordParagraphText_TextAndTab()
     {
         var run = new Run(new WordText("Hi"), new TabChar());
-        Assert.That(Render(new Paragraph(run)), Is.EqualTo("Hi\t"));
+        Assert.That(Render(new(run)), Is.EqualTo("Hi\t"));
     }
 
     [Test]
     public void AppendWordParagraphText_PageBreak()
     {
         var run = new Run(new WordText("Before"), new Break { Type = BreakValues.Page });
-        Assert.That(Render(new Paragraph(run)), Does.Contain("--- Page Break ---"));
+        Assert.That(Render(new(run)), Does.Contain("--- Page Break ---"));
     }
 
     [Test]
     public void AppendWordParagraphText_LineBreak()
     {
         var run = new Run(new WordText("A"), new Break());
-        var result = Render(new Paragraph(run));
+        var result = Render(new(run));
         Assert.That(result, Does.StartWith("A"));
         Assert.That(result, Does.Not.Contain("Page Break"));
     }
@@ -115,7 +115,7 @@ public class WordUnitTests
     public void AppendWordParagraphText_Empty_ReturnsFalse()
     {
         var builder = new StringBuilder();
-        Assert.That(VerifyOpenXml.AppendWordParagraphText(builder, new Paragraph()), Is.False);
+        Assert.That(VerifyOpenXml.AppendWordParagraphText(builder, new()), Is.False);
         Assert.That(builder.Length, Is.Zero);
     }
 

@@ -5,7 +5,7 @@
       Columns: [
         {
           Name: Header,
-          ContainsHtml: false
+          ContainsRichText: false
         }
       ]
     }

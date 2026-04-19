@@ -158,6 +158,96 @@ public class ExcelUnitTests
     }
 
     [Test]
+    public void GetColumnInfos_RichText_SharedString()
+    {
+        using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
+        var wbPart = doc.AddWorkbookPart();
+        wbPart.Workbook = new(new Sheets());
+
+        var sharedStringPart = wbPart.AddNewPart<SharedStringTablePart>();
+        sharedStringPart.SharedStringTable = new(
+            new SharedStringItem(new Text("Plain")),
+            new SharedStringItem(
+                new DocumentFormat.OpenXml.Spreadsheet.Run(new Text("Rich")),
+                new DocumentFormat.OpenXml.Spreadsheet.Run(new Text("Text"))));
+
+        var wsPart = wbPart.AddNewPart<WorksheetPart>();
+        var sheetData = new SheetData(
+            new Row(
+                new Cell { DataType = CellValues.InlineString, InlineString = new(new Text("ColA")), CellReference = "A1" },
+                new Cell { DataType = CellValues.InlineString, InlineString = new(new Text("ColB")), CellReference = "B1" })
+            {
+                RowIndex = 1u
+            },
+            new Row(
+                new Cell { DataType = CellValues.SharedString, CellValue = new("0"), CellReference = "A2" },
+                new Cell { DataType = CellValues.SharedString, CellValue = new("1"), CellReference = "B2" })
+            {
+                RowIndex = 2u
+            });
+        wsPart.Worksheet = new(sheetData);
+
+        var result = VerifyOpenXml.GetColumnInfos(wsPart, wbPart)!;
+        Assert.That(result[0].ContainsRichText, Is.False);
+        Assert.That(result[1].ContainsRichText, Is.True);
+    }
+
+    [Test]
+    public void GetColumnInfos_RichText_InlineString()
+    {
+        using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
+        var wbPart = doc.AddWorkbookPart();
+        wbPart.Workbook = new(new Sheets());
+
+        var wsPart = wbPart.AddNewPart<WorksheetPart>();
+        var sheetData = new SheetData(
+            new Row(
+                new Cell { DataType = CellValues.InlineString, InlineString = new(new Text("Col")), CellReference = "A1" })
+            {
+                RowIndex = 1u
+            },
+            new Row(
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new DocumentFormat.OpenXml.Spreadsheet.Run(new Text("Styled"))),
+                    CellReference = "A2"
+                })
+            {
+                RowIndex = 2u
+            });
+        wsPart.Worksheet = new(sheetData);
+
+        var result = VerifyOpenXml.GetColumnInfos(wsPart, wbPart)!;
+        Assert.That(result[0].ContainsRichText, Is.True);
+    }
+
+    [Test]
+    public void GetColumnInfos_RichText_HeaderRowIgnored()
+    {
+        using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
+        var wbPart = doc.AddWorkbookPart();
+        wbPart.Workbook = new(new Sheets());
+
+        var wsPart = wbPart.AddNewPart<WorksheetPart>();
+        var sheetData = new SheetData(
+            new Row(
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new DocumentFormat.OpenXml.Spreadsheet.Run(new Text("HeaderRich"))),
+                    CellReference = "A1"
+                })
+            {
+                RowIndex = 1u
+            });
+        wsPart.Worksheet = new(sheetData);
+
+        var result = VerifyOpenXml.GetColumnInfos(wsPart, wbPart)!;
+        Assert.That(result[0].ContainsRichText, Is.False);
+    }
+
+    [Test]
     public void BuildSheetInfos_MultipleSheets()
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
