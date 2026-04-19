@@ -22,5 +22,5 @@ class ColumnInfo
 {
     public required string Name { get; init; }
     public double? Width { get; init; }
-    public bool ContainsHtml { get; init; }
+    public bool ContainsRichText { get; init; }
 }

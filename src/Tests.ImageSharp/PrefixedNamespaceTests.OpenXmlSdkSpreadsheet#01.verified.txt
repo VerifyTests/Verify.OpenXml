@@ -5,11 +5,11 @@
       Columns: [
         {
           Name: Hello,
-          ContainsHtml: false
+          ContainsRichText: false
         },
         {
           Name: World,
-          ContainsHtml: false
+          ContainsRichText: false
         }
       ]
     }

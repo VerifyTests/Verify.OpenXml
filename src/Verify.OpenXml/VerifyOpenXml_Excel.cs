@@ -112,7 +112,7 @@ public static partial class VerifyOpenXml
             }
         }
 
-        var htmlColumns = FindHtmlColumns(worksheetPart, workbookPart, sharedStringItems, firstRow.RowIndex?.Value);
+        var richTextColumns = FindRichTextColumns(worksheetPart, sharedStringItems, firstRow.RowIndex?.Value);
 
         var result = new List<ColumnInfo>();
         uint colIndex = 1;
@@ -127,7 +127,7 @@ public static partial class VerifyOpenXml
                 {
                     Name = name,
                     Width = width,
-                    ContainsHtml = htmlColumns.Contains(colIndex)
+                    ContainsRichText = richTextColumns.Contains(colIndex)
                 });
 
             colIndex++;
@@ -136,11 +136,9 @@ public static partial class VerifyOpenXml
         return result;
     }
 
-    static readonly Regex htmlTagRegex = new("<[a-zA-Z][^>]*>", RegexOptions.Compiled);
-
-    static HashSet<uint> FindHtmlColumns(WorksheetPart worksheetPart, WorkbookPart workbookPart, List<SharedStringItem>? sharedStringItems, uint? headerRowIndex)
+    static HashSet<uint> FindRichTextColumns(WorksheetPart worksheetPart, List<SharedStringItem>? sharedStringItems, uint? headerRowIndex)
     {
-        var htmlColumns = new HashSet<uint>();
+        var richTextColumns = new HashSet<uint>();
         foreach (var row in worksheetPart.Worksheet!.Descendants<Row>())
         {
             if (row.RowIndex?.Value == headerRowIndex)
@@ -151,20 +149,39 @@ public static partial class VerifyOpenXml
             foreach (var cell in row.Elements<Cell>())
             {
                 var colIndex = GetColumnIndex(cell);
-                if (colIndex == null || htmlColumns.Contains(colIndex.Value))
+                if (colIndex == null || richTextColumns.Contains(colIndex.Value))
                 {
                     continue;
                 }
 
-                var text = GetCellValue(cell, workbookPart, sharedStringItems, Counter.Current);
-                if (htmlTagRegex.IsMatch(text))
+                if (IsRichText(cell, sharedStringItems))
                 {
-                    htmlColumns.Add(colIndex.Value);
+                    richTextColumns.Add(colIndex.Value);
                 }
             }
         }
 
-        return htmlColumns;
+        return richTextColumns;
+    }
+
+    static bool IsRichText(Cell cell, List<SharedStringItem>? sharedStringItems)
+    {
+        if (cell.DataType?.Value == CellValues.SharedString &&
+            sharedStringItems != null &&
+            int.TryParse(cell.InnerText, out var ssid) &&
+            ssid >= 0 &&
+            ssid < sharedStringItems.Count)
+        {
+            return sharedStringItems[ssid].Elements<DocumentFormat.OpenXml.Spreadsheet.Run>().Any();
+        }
+
+        if (cell.DataType?.Value == CellValues.InlineString &&
+            cell.InlineString != null)
+        {
+            return cell.InlineString.Elements<DocumentFormat.OpenXml.Spreadsheet.Run>().Any();
+        }
+
+        return false;
     }
 
     static uint? GetColumnIndex(Cell cell)
