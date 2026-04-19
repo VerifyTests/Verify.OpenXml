@@ -112,6 +112,8 @@ public static partial class VerifyOpenXml
             }
         }
 
+        var htmlColumns = FindHtmlColumns(worksheetPart, workbookPart, sharedStringItems, firstRow.RowIndex?.Value);
+
         var result = new List<ColumnInfo>();
         uint colIndex = 1;
 
@@ -124,13 +126,73 @@ public static partial class VerifyOpenXml
                 new()
                 {
                     Name = name,
-                    Width = width
+                    Width = width,
+                    ContainsHtml = htmlColumns.Contains(colIndex)
                 });
 
             colIndex++;
         }
 
         return result;
+    }
+
+    static readonly Regex htmlTagRegex = new(@"<[a-zA-Z][^>]*>", RegexOptions.Compiled);
+
+    static HashSet<uint> FindHtmlColumns(WorksheetPart worksheetPart, WorkbookPart workbookPart, List<SharedStringItem>? sharedStringItems, uint? headerRowIndex)
+    {
+        var htmlColumns = new HashSet<uint>();
+        foreach (var row in worksheetPart.Worksheet!.Descendants<Row>())
+        {
+            if (row.RowIndex?.Value == headerRowIndex)
+            {
+                continue;
+            }
+
+            foreach (var cell in row.Elements<Cell>())
+            {
+                var colIndex = GetColumnIndex(cell);
+                if (colIndex == null || htmlColumns.Contains(colIndex.Value))
+                {
+                    continue;
+                }
+
+                var text = GetCellValue(cell, workbookPart, sharedStringItems, Counter.Current);
+                if (htmlTagRegex.IsMatch(text))
+                {
+                    htmlColumns.Add(colIndex.Value);
+                }
+            }
+        }
+
+        return htmlColumns;
+    }
+
+    static uint? GetColumnIndex(Cell cell)
+    {
+        var reference = cell.CellReference?.Value;
+        if (reference == null)
+        {
+            return null;
+        }
+
+        uint index = 0;
+        foreach (var c in reference)
+        {
+            if (c is >= 'A' and <= 'Z')
+            {
+                index = (index * 26) + (uint) (c - 'A' + 1);
+            }
+            else if (c is >= 'a' and <= 'z')
+            {
+                index = (index * 26) + (uint) (c - 'a' + 1);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return index == 0 ? null : index;
     }
 
     internal static string GetHeaderCellValue(Cell cell, List<SharedStringItem>? sharedStringItems)
