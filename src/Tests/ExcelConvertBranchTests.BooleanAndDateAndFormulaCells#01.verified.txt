@@ -4,7 +4,8 @@
       Name: Sheet1,
       Columns: [
         {
-          Name: Header
+          Name: Header,
+          ContainsHtml: false
         }
       ]
     }

@@ -114,14 +114,14 @@ public class WordUnitTests
     [Test]
     public void AppendWordParagraphText_Empty_ReturnsFalse()
     {
-        var builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         Assert.That(VerifyOpenXml.AppendWordParagraphText(builder, new Paragraph()), Is.False);
         Assert.That(builder.Length, Is.Zero);
     }
 
     static string Render(Paragraph paragraph)
     {
-        var builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         VerifyOpenXml.AppendWordParagraphText(builder, paragraph);
         return builder.ToString();
     }

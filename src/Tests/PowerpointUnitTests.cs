@@ -81,7 +81,7 @@ public class PowerpointUnitTests
                     new ApplicationNonVisualDrawingProperties()),
                 new GroupShapeProperties(new A.TransformGroup()))));
 
-        var builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         Assert.That(VerifyOpenXml.AppendSlideText(builder, slidePart), Is.False);
         Assert.That(builder.Length, Is.Zero);
     }
@@ -92,7 +92,7 @@ public class PowerpointUnitTests
         using var doc = CreateEmptyDoc();
         var presPart = doc.PresentationPart!;
         var slidePart = AddSlide(presPart, "Line1", "Line2");
-        var builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         Assert.That(VerifyOpenXml.AppendSlideText(builder, slidePart), Is.True);
         var text = builder.ToString();
         Assert.That(text, Does.Contain("Line1"));
@@ -108,7 +108,7 @@ public class PowerpointUnitTests
         slidePart.Slide = BuildSlide(
             new A.Paragraph(),
             new A.Paragraph(new A.Run(new A.RunProperties(), new A.Text("Only"))));
-        var builder = new System.Text.StringBuilder();
+        var builder = new StringBuilder();
         VerifyOpenXml.AppendSlideText(builder, slidePart);
         Assert.That(builder.ToString(), Is.EqualTo("Only"));
     }

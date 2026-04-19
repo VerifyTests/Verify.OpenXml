@@ -136,7 +136,7 @@ public static partial class VerifyOpenXml
         return result;
     }
 
-    static readonly Regex htmlTagRegex = new(@"<[a-zA-Z][^>]*>", RegexOptions.Compiled);
+    static readonly Regex htmlTagRegex = new("<[a-zA-Z][^>]*>", RegexOptions.Compiled);
 
     static HashSet<uint> FindHtmlColumns(WorksheetPart worksheetPart, WorkbookPart workbookPart, List<SharedStringItem>? sharedStringItems, uint? headerRowIndex)
     {
@@ -180,11 +180,11 @@ public static partial class VerifyOpenXml
         {
             if (c is >= 'A' and <= 'Z')
             {
-                index = (index * 26) + (uint) (c - 'A' + 1);
+                index = index * 26 + (uint) (c - 'A' + 1);
             }
             else if (c is >= 'a' and <= 'z')
             {
-                index = (index * 26) + (uint) (c - 'a' + 1);
+                index = index * 26 + (uint) (c - 'a' + 1);
             }
             else
             {
@@ -215,7 +215,7 @@ public static partial class VerifyOpenXml
         return value;
     }
 
-    internal static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
+    static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
     {
         var workbookPart = document.WorkbookPart!;
         var counter = Counter.Current;

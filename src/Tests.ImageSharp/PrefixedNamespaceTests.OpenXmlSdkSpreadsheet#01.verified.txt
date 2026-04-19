@@ -4,10 +4,12 @@
       Name: Sheet1,
       Columns: [
         {
-          Name: Hello
+          Name: Hello,
+          ContainsHtml: false
         },
         {
-          Name: World
+          Name: World,
+          ContainsHtml: false
         }
       ]
     }

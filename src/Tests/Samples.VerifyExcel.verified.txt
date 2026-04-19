@@ -5,39 +5,48 @@
       Columns: [
         {
           Name: 0,
-          Width: 11.4
+          Width: 11.4,
+          ContainsHtml: false
         },
         {
           Name: First Name,
-          Width: 11.4
+          Width: 11.4,
+          ContainsHtml: false
         },
         {
           Name: Last Name,
-          Width: 11.4
+          Width: 11.4,
+          ContainsHtml: false
         },
         {
           Name: Gender,
-          Width: 11.4
+          Width: 11.4,
+          ContainsHtml: false
         },
         {
           Name: Country,
-          Width: 11.4
+          Width: 11.4,
+          ContainsHtml: false
         },
         {
           Name: Date,
-          Width: 11.4
+          Width: 11.4,
+          ContainsHtml: false
         },
         {
           Name: Age,
-          Width: 11.4
+          Width: 11.4,
+          ContainsHtml: false
         },
         {
           Name: Id,
-          Width: 11.4
+          Width: 11.4,
+          ContainsHtml: false
         },
         {
           Name: Formula,
-          Width: 11.4
+          Width: 11.4,
+          ContainsHtml: false
         }
       ]
     }
