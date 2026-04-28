@@ -24,11 +24,11 @@ static class MorphRenderer
 
         if (hasSkia)
         {
-            Instance = Load(skiaPath, "Morph.Skia.DocumentConverter");
+            Instance = Load(skiaPath, "Morph.SkiaDocumentConverter");
         }
         else if (hasImageSharp)
         {
-            Instance = Load(imageSharpPath, "Morph.ImageSharp.DocumentConverter");
+            Instance = Load(imageSharpPath, "Morph.ImageSharpDocumentConverter");
         }
     }
 
