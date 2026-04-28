@@ -1,5 +1,5 @@
 #if NET10_0_OR_GREATER
-using WordRender;
+using Morph;
 
 namespace VerifyTests;
 
@@ -24,11 +24,11 @@ static class MorphRenderer
 
         if (hasSkia)
         {
-            Instance = Load(skiaPath, "WordRender.Skia.DocumentConverter");
+            Instance = Load(skiaPath, "Morph.Skia.DocumentConverter");
         }
         else if (hasImageSharp)
         {
-            Instance = Load(imageSharpPath, "WordRender.ImageSharp.DocumentConverter");
+            Instance = Load(imageSharpPath, "Morph.ImageSharp.DocumentConverter");
         }
     }
 

@@ -254,7 +254,8 @@ public static partial class VerifyOpenXml
                     builder.Append(EscapeCsvValue(cellValue));
 
                     // Add formula if present
-                    if (cell.CellFormula != null && !string.IsNullOrEmpty(cell.CellFormula.Text))
+                    if (cell.CellFormula != null &&
+                        !string.IsNullOrEmpty(cell.CellFormula.Text))
                     {
                         builder.Append(" (");
                         builder.Append(EscapeCsvValue(cell.CellFormula.Text));
