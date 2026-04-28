@@ -1,8 +1,6 @@
 #if NET10_0_OR_GREATER
 using Morph;
 
-namespace VerifyTests;
-
 static class MorphRenderer
 {
     public static DocumentConverter? Instance { get; }

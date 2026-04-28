@@ -57,7 +57,12 @@ public static partial class VerifyOpenXml
         docxStream.Position = 0;
         copy.Position = 0;
 
-        var pages = renderer.ConvertToImageData(copy);
+        var pages = renderer.ConvertToImageData(
+            copy,
+            new()
+            {
+                DeterministicRendering = true
+            });
         for (var i = 0; i < pages.Count; i++)
         {
             targets.Add(new("png", new MemoryStream(pages[i]), $"page{i + 1:D2}"));
@@ -246,6 +251,7 @@ public static partial class VerifyOpenXml
         {
             return null;
         }
+
         var result = builder.ToString();
         return string.IsNullOrEmpty(result) ? null : result;
     }
