@@ -37,7 +37,8 @@ public static partial class VerifyOpenXml
             Date1904 = workbookProperties?.Date1904?.Value,
             CalculationMode = workbookPart.Workbook?.CalculationProperties?.CalculationMode?.HasValue == true
                 ? workbookPart.Workbook.CalculationProperties.CalculationMode.Value.ToString()
-                : null
+                : null,
+            Protection = BuildWorkbookProtectionInfo(workbookPart)
         };
 
         // Create deterministic XLSX output
@@ -71,12 +72,60 @@ public static partial class VerifyOpenXml
             var sheetInfo = new SheetInfo
             {
                 Name = sheetElement.Name!.Value!,
-                Columns = columns is { Count: > 0 } ? columns : null
+                Columns = columns is { Count: > 0 } ? columns : null,
+                Protection = BuildSheetProtectionInfo(worksheetPart)
             };
             sheetInfos.Add(sheetInfo);
         }
 
         return sheetInfos;
+    }
+
+    static WorkbookProtectionInfo? BuildWorkbookProtectionInfo(WorkbookPart workbookPart)
+    {
+        var protection = workbookPart.Workbook?.GetFirstChild<WorkbookProtection>();
+        if (protection == null)
+        {
+            return null;
+        }
+
+        return new()
+        {
+            Password = protection.WorkbookPassword?.Value,
+            LockStructure = protection.LockStructure?.Value ?? false,
+            LockWindows = protection.LockWindows?.Value ?? false,
+            LockRevision = protection.LockRevision?.Value ?? false
+        };
+    }
+
+    static SheetProtectionInfo? BuildSheetProtectionInfo(WorksheetPart worksheetPart)
+    {
+        var protection = worksheetPart.Worksheet?.GetFirstChild<SheetProtection>();
+        if (protection == null)
+        {
+            return null;
+        }
+
+        return new()
+        {
+            Password = protection.Password?.Value,
+            Sheet = protection.Sheet?.Value ?? false,
+            Objects = protection.Objects?.Value ?? false,
+            Scenarios = protection.Scenarios?.Value ?? false,
+            FormatCells = protection.FormatCells?.Value ?? false,
+            FormatColumns = protection.FormatColumns?.Value ?? false,
+            FormatRows = protection.FormatRows?.Value ?? false,
+            InsertColumns = protection.InsertColumns?.Value ?? false,
+            InsertRows = protection.InsertRows?.Value ?? false,
+            InsertHyperlinks = protection.InsertHyperlinks?.Value ?? false,
+            DeleteColumns = protection.DeleteColumns?.Value ?? false,
+            DeleteRows = protection.DeleteRows?.Value ?? false,
+            SelectLockedCells = protection.SelectLockedCells?.Value ?? false,
+            SelectUnlockedCells = protection.SelectUnlockedCells?.Value ?? false,
+            Sort = protection.Sort?.Value ?? false,
+            AutoFilter = protection.AutoFilter?.Value ?? false,
+            PivotTables = protection.PivotTables?.Value ?? false
+        };
     }
 
     internal static List<ColumnInfo>? GetColumnInfos(WorksheetPart worksheetPart, WorkbookPart workbookPart)
