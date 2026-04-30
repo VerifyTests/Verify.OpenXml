@@ -1,4 +1,3 @@
-using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.CustomProperties;
 using DocumentFormat.OpenXml.VariantTypes;
 using WordFont = DocumentFormat.OpenXml.Wordprocessing.Font;

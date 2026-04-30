@@ -1,0 +1,39 @@
+﻿{
+  Sheets: [
+    {
+      Name: Sheet1,
+      Columns: [
+        {
+          Name: Header,
+          ContainsRichText: false
+        }
+      ],
+      Protection: {
+        Password: DAA7,
+        Sheet: true,
+        Objects: true,
+        Scenarios: true,
+        FormatCells: true,
+        FormatColumns: true,
+        FormatRows: true,
+        InsertColumns: true,
+        InsertRows: true,
+        InsertHyperlinks: true,
+        DeleteColumns: true,
+        DeleteRows: true,
+        SelectLockedCells: false,
+        SelectUnlockedCells: false,
+        Sort: false,
+        AutoFilter: false,
+        PivotTables: true
+      }
+    }
+  ],
+  WorksheetCount: 1,
+  Protection: {
+    Password: DAA7,
+    LockStructure: true,
+    LockWindows: false,
+    LockRevision: false
+  }
+}
