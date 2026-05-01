@@ -169,7 +169,7 @@ public static partial class VerifyOpenXml
 
         var richTextColumns = FindRichTextColumns(worksheetPart, sharedStringItems, firstRow.RowIndex?.Value);
         var validationsByColumn = BuildValidationsByColumn(worksheetPart);
-        var requiredColumns = FindRequiredHighlightColumns(worksheetPart, workbookPart);
+        var requiredColumns = FindRequiredHighlightColumns(worksheetPart);
 
         var result = new List<ColumnInfo>();
         uint colIndex = 1;
@@ -228,7 +228,7 @@ public static partial class VerifyOpenXml
         }
 
         bool? locked = null;
-        var protection = cellFormat.GetFirstChild<DocumentFormat.OpenXml.Spreadsheet.Protection>();
+        var protection = cellFormat.GetFirstChild<Protection>();
         if (protection?.Locked?.Value is { } lockedValue)
         {
             locked = lockedValue;
@@ -345,12 +345,11 @@ public static partial class VerifyOpenXml
         };
     }
 
-    static IReadOnlyList<string>? ParseListFormula(string formula)
+    static IReadOnlyList<string> ParseListFormula(string formula)
     {
         // Excel embeds list values as a single quoted, comma-separated string: "A,B,C"
         var trimmed = formula.Trim();
-        if (trimmed.Length >= 2 &&
-            trimmed[0] == '"' &&
+        if (trimmed is ['"', _, ..] &&
             trimmed[^1] == '"')
         {
             trimmed = trimmed.Substring(1, trimmed.Length - 2);
@@ -450,7 +449,7 @@ public static partial class VerifyOpenXml
         return (column, null);
     }
 
-    static HashSet<uint> FindRequiredHighlightColumns(WorksheetPart worksheetPart, WorkbookPart workbookPart)
+    static HashSet<uint> FindRequiredHighlightColumns(WorksheetPart worksheetPart)
     {
         var result = new HashSet<uint>();
         if (worksheetPart.Worksheet == null)

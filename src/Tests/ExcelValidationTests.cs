@@ -50,7 +50,7 @@ public class ExcelValidationTests
                     ApplyNumberFormat = true
                 },
                 new CellFormat(
-                    new DocumentFormat.OpenXml.Spreadsheet.Protection
+                    new Protection
                     {
                         Locked = false
                     })
@@ -67,22 +67,22 @@ public class ExcelValidationTests
             });
 
         var wsPart = wbPart.AddNewPart<WorksheetPart>();
-        var cols = new DocumentFormat.OpenXml.Spreadsheet.Columns(
-            new DocumentFormat.OpenXml.Spreadsheet.Column
+        var cols = new Columns(
+            new Column
             {
                 Min = 1,
                 Max = 1,
                 Width = 25,
                 CustomWidth = true
             },
-            new DocumentFormat.OpenXml.Spreadsheet.Column
+            new Column
             {
                 Min = 2,
                 Max = 2,
                 Width = 14,
                 CustomWidth = true
             },
-            new DocumentFormat.OpenXml.Spreadsheet.Column
+            new Column
             {
                 Min = 3,
                 Max = 3,
@@ -90,7 +90,7 @@ public class ExcelValidationTests
                 CustomWidth = true,
                 Style = 2
             },
-            new DocumentFormat.OpenXml.Spreadsheet.Column
+            new Column
             {
                 Min = 4,
                 Max = 4,
@@ -98,7 +98,7 @@ public class ExcelValidationTests
                 CustomWidth = true,
                 Style = 3
             },
-            new DocumentFormat.OpenXml.Spreadsheet.Column
+            new Column
             {
                 Min = 5,
                 Max = 5,
@@ -127,7 +127,7 @@ public class ExcelValidationTests
                 FormatId = 0
             })
         {
-            SequenceOfReferences = new ListValue<StringValue>
+            SequenceOfReferences = new()
             {
                 InnerText = "A2:A100"
             }
@@ -144,7 +144,7 @@ public class ExcelValidationTests
                 ShowErrorMessage = true,
                 ErrorTitle = "Invalid",
                 Error = "Pick a status from the list.",
-                SequenceOfReferences = new ListValue<StringValue>
+                SequenceOfReferences = new()
                 {
                     InnerText = "B2:B100"
                 }
@@ -156,7 +156,7 @@ public class ExcelValidationTests
                 Type = DataValidationValues.Date,
                 Operator = DataValidationOperatorValues.Between,
                 AllowBlank = true,
-                SequenceOfReferences = new ListValue<StringValue>
+                SequenceOfReferences = new()
                 {
                     InnerText = "C2:C100"
                 }
@@ -168,7 +168,7 @@ public class ExcelValidationTests
                 Type = DataValidationValues.Decimal,
                 Operator = DataValidationOperatorValues.Between,
                 AllowBlank = true,
-                SequenceOfReferences = new ListValue<StringValue>
+                SequenceOfReferences = new()
                 {
                     InnerText = "D2:D100"
                 }

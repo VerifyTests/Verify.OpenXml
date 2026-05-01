@@ -4,13 +4,10 @@ using WordFont = DocumentFormat.OpenXml.Wordprocessing.Font;
 using WordText = DocumentFormat.OpenXml.Wordprocessing.Text;
 using Body = DocumentFormat.OpenXml.Wordprocessing.Body;
 using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
-using Run = DocumentFormat.OpenXml.Wordprocessing.Run;
 using TabChar = DocumentFormat.OpenXml.Wordprocessing.TabChar;
 using Break = DocumentFormat.OpenXml.Wordprocessing.Break;
 using BreakValues = DocumentFormat.OpenXml.Wordprocessing.BreakValues;
 using Table = DocumentFormat.OpenXml.Wordprocessing.Table;
-using TableRow = DocumentFormat.OpenXml.Wordprocessing.TableRow;
-using TableCell = DocumentFormat.OpenXml.Wordprocessing.TableCell;
 using EmbedRegularFont = DocumentFormat.OpenXml.Wordprocessing.EmbedRegularFont;
 using EmbedBoldFont = DocumentFormat.OpenXml.Wordprocessing.EmbedBoldFont;
 using EmbedItalicFont = DocumentFormat.OpenXml.Wordprocessing.EmbedItalicFont;
@@ -74,12 +71,12 @@ public class WordUnitTests
     [Test]
     public void GetWordDocumentText_WithTable()
     {
-        var row1 = new TableRow(
-            new TableCell(MakeParagraph("a1")),
-            new TableCell(MakeParagraph("b1")));
-        var row2 = new TableRow(
-            new TableCell(MakeParagraph("a2")),
-            new TableCell(MakeParagraph("b2")));
+        var row1 = new DocumentFormat.OpenXml.Wordprocessing.TableRow(
+            new DocumentFormat.OpenXml.Wordprocessing.TableCell(MakeParagraph("a1")),
+            new DocumentFormat.OpenXml.Wordprocessing.TableCell(MakeParagraph("b1")));
+        var row2 = new DocumentFormat.OpenXml.Wordprocessing.TableRow(
+            new DocumentFormat.OpenXml.Wordprocessing.TableCell(MakeParagraph("a2")),
+            new DocumentFormat.OpenXml.Wordprocessing.TableCell(MakeParagraph("b2")));
         var body = new Body(new Table(row1, row2));
         using var doc = CreateDoc(body);
         var text = VerifyOpenXml.GetWordDocumentText(doc)!;
@@ -90,21 +87,21 @@ public class WordUnitTests
     [Test]
     public void AppendWordParagraphText_TextAndTab()
     {
-        var run = new Run(new WordText("Hi"), new TabChar());
+        var run = new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText("Hi"), new TabChar());
         Assert.That(Render(new(run)), Is.EqualTo("Hi\t"));
     }
 
     [Test]
     public void AppendWordParagraphText_PageBreak()
     {
-        var run = new Run(new WordText("Before"), new Break { Type = BreakValues.Page });
+        var run = new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText("Before"), new Break { Type = BreakValues.Page });
         Assert.That(Render(new(run)), Does.Contain("--- Page Break ---"));
     }
 
     [Test]
     public void AppendWordParagraphText_LineBreak()
     {
-        var run = new Run(new WordText("A"), new Break());
+        var run = new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText("A"), new Break());
         var result = Render(new(run));
         Assert.That(result, Does.StartWith("A"));
         Assert.That(result, Does.Not.Contain("Page Break"));
@@ -245,7 +242,7 @@ public class WordUnitTests
     }
 
     static Paragraph MakeParagraph(string text) =>
-        new(new Run(new WordText(text)));
+        new(new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText(text)));
 
     static WordFont MakeFont(string name, params OpenXmlElement[] children)
     {
