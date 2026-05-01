@@ -25,20 +25,44 @@ public class ExcelConvertBranchTests
         stylesPart.Stylesheet = new(
             new CellFormats(
                 new CellFormat(),
-                new CellFormat { NumberFormatId = 14, ApplyNumberFormat = true }));
+                new CellFormat
+                {
+                    NumberFormatId = 14,
+                    ApplyNumberFormat = true
+                }));
 
         var wsPart = wbPart.AddNewPart<WorksheetPart>();
         var sheetData = new SheetData(
             new Row(
-                new Cell { DataType = CellValues.SharedString, CellValue = new("0") })
+                new Cell
+                {
+                    DataType = CellValues.SharedString,
+                    CellValue = new("0")
+                })
             {
                 RowIndex = 1u
             },
             new Row(
-                new Cell { DataType = CellValues.Boolean, CellValue = new("1") },
-                new Cell { DataType = CellValues.Boolean, CellValue = new("0") },
-                new Cell { DataType = CellValues.Date, CellValue = new("45000") },
-                new Cell { CellValue = new("45000"), StyleIndex = 1u },
+                new Cell
+                {
+                    DataType = CellValues.Boolean,
+                    CellValue = new("1")
+                },
+                new Cell
+                {
+                    DataType = CellValues.Boolean,
+                    CellValue = new("0")
+                },
+                new Cell
+                {
+                    DataType = CellValues.Date,
+                    CellValue = new("45000")
+                },
+                new Cell
+                {
+                    CellValue = new("45000"),
+                    StyleIndex = 1u
+                },
                 new Cell
                 {
                     CellValue = new("99"),
@@ -50,12 +74,13 @@ public class ExcelConvertBranchTests
         wsPart.Worksheet = new(sheetData);
 
         var sheets = wbPart.Workbook.GetFirstChild<Sheets>()!;
-        sheets.Append(new Sheet
-        {
-            Id = wbPart.GetIdOfPart(wsPart),
-            SheetId = 1,
-            Name = "Sheet1"
-        });
+        sheets.Append(
+            new Sheet
+            {
+                Id = wbPart.GetIdOfPart(wsPart),
+                SheetId = 1,
+                Name = "Sheet1"
+            });
 
         return document;
     }
