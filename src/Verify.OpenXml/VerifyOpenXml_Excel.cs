@@ -64,14 +64,21 @@ public static partial class VerifyOpenXml
     internal static List<SheetInfo> BuildSheetInfos(WorkbookPart workbookPart)
     {
         var sheetInfos = new List<SheetInfo>();
+        var propertyNames = ReadColumnPropertyNames(workbookPart);
 
         foreach (var sheetElement in workbookPart.Workbook!.Sheets!.Elements<Sheet>())
         {
             var worksheetPart = (WorksheetPart) workbookPart.GetPartById(sheetElement.Id!);
+            var sheetName = sheetElement.Name!.Value!;
             var columns = GetColumnInfos(worksheetPart, workbookPart);
+            if (columns != null && propertyNames.TryGetValue(sheetName, out var sheetProps))
+            {
+                ApplyPropertyNames(columns, sheetProps);
+            }
+
             var sheetInfo = new SheetInfo
             {
-                Name = sheetElement.Name!.Value!,
+                Name = sheetName,
                 Columns = columns is { Count: > 0 } ? columns : null,
                 Protection = BuildSheetProtectionInfo(worksheetPart)
             };
@@ -79,6 +86,78 @@ public static partial class VerifyOpenXml
         }
 
         return sheetInfos;
+    }
+
+    static void ApplyPropertyNames(List<ColumnInfo> columns, IReadOnlyDictionary<int, string> propertyNames)
+    {
+        for (var i = 0; i < columns.Count; i++)
+        {
+            if (propertyNames.TryGetValue(i + 1, out var name))
+            {
+                var existing = columns[i];
+                columns[i] = new()
+                {
+                    Name = existing.Name,
+                    PropertyName = name,
+                    Width = existing.Width,
+                    ContainsRichText = existing.ContainsRichText,
+                    NumberFormat = existing.NumberFormat,
+                    Locked = existing.Locked,
+                    RequiredHighlight = existing.RequiredHighlight,
+                    Validation = existing.Validation
+                };
+            }
+        }
+    }
+
+    static Dictionary<string, IReadOnlyDictionary<int, string>> ReadColumnPropertyNames(WorkbookPart workbookPart)
+    {
+        var result = new Dictionary<string, IReadOnlyDictionary<int, string>>();
+        const string ns = "http://schemas.simoncropp.com/excelsior/v1";
+
+        foreach (var part in workbookPart.CustomXmlParts)
+        {
+            using var stream = part.GetStream(System.IO.FileMode.Open, System.IO.FileAccess.Read);
+            System.Xml.Linq.XDocument doc;
+            try
+            {
+                doc = System.Xml.Linq.XDocument.Load(stream);
+            }
+            catch
+            {
+                continue;
+            }
+
+            var root = doc.Root;
+            if (root == null || root.Name.NamespaceName != ns || root.Name.LocalName != "excelsior")
+            {
+                continue;
+            }
+
+            foreach (var sheetElement in root.Elements(System.Xml.Linq.XName.Get("sheet", ns)))
+            {
+                var sheetName = sheetElement.Attribute("name")?.Value;
+                if (sheetName == null)
+                {
+                    continue;
+                }
+
+                var columnMap = new Dictionary<int, string>();
+                foreach (var col in sheetElement.Elements(System.Xml.Linq.XName.Get("column", ns)))
+                {
+                    var indexAttr = col.Attribute("index")?.Value;
+                    var prop = col.Attribute("property")?.Value;
+                    if (indexAttr != null && prop != null && int.TryParse(indexAttr, out var index))
+                    {
+                        columnMap[index] = prop;
+                    }
+                }
+
+                result[sheetName] = columnMap;
+            }
+        }
+
+        return result;
     }
 
     static WorkbookProtectionInfo? BuildWorkbookProtectionInfo(WorkbookPart workbookPart)
@@ -337,8 +416,11 @@ public static partial class VerifyOpenXml
             Min = min,
             Max = max,
             AllowBlank = dv.AllowBlank?.Value ?? false,
+            ShowInputMessage = dv.ShowInputMessage?.Value ?? false,
             InputTitle = dv.PromptTitle?.Value,
             InputMessage = dv.Prompt?.Value,
+            ShowErrorMessage = dv.ShowErrorMessage?.Value ?? false,
+            ErrorStyle = dv.ErrorStyle?.InnerText,
             ErrorTitle = dv.ErrorTitle?.Value,
             ErrorMessage = dv.Error?.Value,
             Range = range
