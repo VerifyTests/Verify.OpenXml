@@ -761,7 +761,10 @@ public static partial class VerifyOpenXml
             }
             else if (cell.DataType.Value == CellValues.Boolean)
             {
-                return value == "1" ? "true" : "false";
+                // Excel's spec for t="b" cells uses "1"/"0", but the OpenXml SDK's
+                // CellValue(bool) ctor writes "true"/"false" via XmlConvert.ToString.
+                // Both forms appear in real-world spreadsheets.
+                return value is "1" or "true" or "True" or "TRUE" ? "true" : "false";
             }
             else if (cell.DataType.Value == CellValues.Date)
             {
