@@ -145,23 +145,31 @@ public static partial class VerifyOpenXml
 
         // Build a map of column index to custom width
         var columnWidths = new Dictionary<uint, double>();
+        var columnLevelStyles = new Dictionary<uint, uint>();
         var columnsElement = worksheetPart.Worksheet.GetFirstChild<DocumentFormat.OpenXml.Spreadsheet.Columns>();
         if (columnsElement != null)
         {
             foreach (var col in columnsElement.Elements<DocumentFormat.OpenXml.Spreadsheet.Column>())
             {
-                if (col.CustomWidth?.Value == true &&
-                    col.Width?.Value is { } width)
+                for (var i = col.Min!.Value; i <= col.Max!.Value; i++)
                 {
-                    for (var i = col.Min!.Value; i <= col.Max!.Value; i++)
+                    if (col.CustomWidth?.Value == true &&
+                        col.Width?.Value is { } width)
                     {
                         columnWidths[i] = width;
+                    }
+
+                    if (col.Style?.Value is { } styleIndex)
+                    {
+                        columnLevelStyles[i] = styleIndex;
                     }
                 }
             }
         }
 
         var richTextColumns = FindRichTextColumns(worksheetPart, sharedStringItems, firstRow.RowIndex?.Value);
+        var validationsByColumn = BuildValidationsByColumn(worksheetPart);
+        var requiredColumns = FindRequiredHighlightColumns(worksheetPart, workbookPart);
 
         var result = new List<ColumnInfo>();
         uint colIndex = 1;
@@ -171,15 +179,310 @@ public static partial class VerifyOpenXml
             var name = GetHeaderCellValue(cell, sharedStringItems);
             double? width = columnWidths.TryGetValue(colIndex, out var w) ? Math.Round(w, 1) : null;
 
+            string? numberFormat = null;
+            bool? locked = null;
+            if (columnLevelStyles.TryGetValue(colIndex, out var styleIndex))
+            {
+                (numberFormat, locked) = ReadColumnLevelStyle(workbookPart, styleIndex);
+            }
+
+            validationsByColumn.TryGetValue(colIndex, out var validation);
+
             result.Add(
                 new()
                 {
                     Name = name,
                     Width = width,
-                    ContainsRichText = richTextColumns.Contains(colIndex)
+                    ContainsRichText = richTextColumns.Contains(colIndex),
+                    NumberFormat = numberFormat,
+                    Locked = locked,
+                    RequiredHighlight = requiredColumns.Contains(colIndex),
+                    Validation = validation
                 });
 
             colIndex++;
+        }
+
+        return result;
+    }
+
+    static (string? NumberFormat, bool? Locked) ReadColumnLevelStyle(WorkbookPart workbookPart, uint styleIndex)
+    {
+        var stylesPart = workbookPart.WorkbookStylesPart;
+        var cellFormats = stylesPart?.Stylesheet?.CellFormats;
+        if (cellFormats == null)
+        {
+            return (null, null);
+        }
+
+        var cellFormat = cellFormats.Elements<CellFormat>().ElementAtOrDefault((int)styleIndex);
+        if (cellFormat == null)
+        {
+            return (null, null);
+        }
+
+        string? numberFormat = null;
+        if (cellFormat.NumberFormatId?.Value is { } nfId && nfId != 0)
+        {
+            numberFormat = ResolveNumberFormat(stylesPart!, nfId);
+        }
+
+        bool? locked = null;
+        var protection = cellFormat.GetFirstChild<DocumentFormat.OpenXml.Spreadsheet.Protection>();
+        if (protection?.Locked?.Value is { } lockedValue)
+        {
+            locked = lockedValue;
+        }
+
+        return (numberFormat, locked);
+    }
+
+    static string? ResolveNumberFormat(WorkbookStylesPart stylesPart, uint numberFormatId)
+    {
+        // Excelsior emits all formats as custom (id >= 164); built-ins are not stored.
+        var numberingFormats = stylesPart.Stylesheet?.NumberingFormats;
+        if (numberingFormats != null)
+        {
+            foreach (var format in numberingFormats.Elements<NumberingFormat>())
+            {
+                if (format.NumberFormatId?.Value == numberFormatId)
+                {
+                    return format.FormatCode?.Value;
+                }
+            }
+        }
+
+        return BuiltInNumberFormat(numberFormatId);
+    }
+
+    static string? BuiltInNumberFormat(uint id) =>
+        id switch
+        {
+            14 => "m/d/yyyy",
+            15 => "d-mmm-yy",
+            16 => "d-mmm",
+            17 => "mmm-yy",
+            18 => "h:mm AM/PM",
+            19 => "h:mm:ss AM/PM",
+            20 => "h:mm",
+            21 => "h:mm:ss",
+            22 => "m/d/yyyy h:mm",
+            _ => null
+        };
+
+    static Dictionary<uint, ColumnValidationInfo> BuildValidationsByColumn(WorksheetPart worksheetPart)
+    {
+        var result = new Dictionary<uint, ColumnValidationInfo>();
+        var dataValidations = worksheetPart.Worksheet?.GetFirstChild<DataValidations>();
+        if (dataValidations == null)
+        {
+            return result;
+        }
+
+        foreach (var dv in dataValidations.Elements<DataValidation>())
+        {
+            var sqref = dv.SequenceOfReferences?.InnerText;
+            if (sqref == null)
+            {
+                continue;
+            }
+
+            var (firstColumn, lastColumn, range) = ParseSqref(sqref);
+            if (firstColumn == null || lastColumn == null)
+            {
+                continue;
+            }
+
+            var info = BuildValidationInfo(dv, range);
+            for (var col = firstColumn.Value; col <= lastColumn.Value; col++)
+            {
+                result[col] = info;
+            }
+        }
+
+        return result;
+    }
+
+    static ColumnValidationInfo BuildValidationInfo(DataValidation dv, string? range)
+    {
+        var type = dv.Type?.InnerText;
+        var op = dv.Operator?.InnerText;
+        IReadOnlyList<string>? allowedValues = null;
+        string? min = null;
+        string? max = null;
+
+        var f1 = dv.Formula1?.Text;
+        var f2 = dv.Formula2?.Text;
+
+        if (dv.Type?.Value == DataValidationValues.List && f1 != null)
+        {
+            allowedValues = ParseListFormula(f1);
+        }
+        else if (dv.Type?.Value == DataValidationValues.Date)
+        {
+            min = ParseDateFormula(f1);
+            max = ParseDateFormula(f2);
+        }
+        else
+        {
+            min = f1;
+            max = f2;
+        }
+
+        return new()
+        {
+            Type = type,
+            Operator = op,
+            AllowedValues = allowedValues,
+            Min = min,
+            Max = max,
+            AllowBlank = dv.AllowBlank?.Value ?? false,
+            InputTitle = dv.PromptTitle?.Value,
+            InputMessage = dv.Prompt?.Value,
+            ErrorTitle = dv.ErrorTitle?.Value,
+            ErrorMessage = dv.Error?.Value,
+            Range = range
+        };
+    }
+
+    static IReadOnlyList<string>? ParseListFormula(string formula)
+    {
+        // Excel embeds list values as a single quoted, comma-separated string: "A,B,C"
+        var trimmed = formula.Trim();
+        if (trimmed.Length >= 2 &&
+            trimmed[0] == '"' &&
+            trimmed[^1] == '"')
+        {
+            trimmed = trimmed.Substring(1, trimmed.Length - 2);
+        }
+
+        return trimmed.Split(',');
+    }
+
+    static string? ParseDateFormula(string? formula)
+    {
+        if (formula == null)
+        {
+            return null;
+        }
+
+        if (double.TryParse(formula, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var oa))
+        {
+            return DateTime.FromOADate(oa).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        return formula;
+    }
+
+    static (uint? First, uint? Last, string? Range) ParseSqref(string sqref)
+    {
+        // sqref can contain multiple regions separated by spaces.
+        // For attribution we use the union of column ranges and the row range from the first region.
+        uint? first = null;
+        uint? last = null;
+        string? rowRange = null;
+
+        foreach (var region in sqref.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = region.Split(':');
+            var (firstCol, firstRow) = ParseCellRef(parts[0]);
+            var lastCol = firstCol;
+            var lastRow = firstRow;
+            if (parts.Length > 1)
+            {
+                (lastCol, lastRow) = ParseCellRef(parts[1]);
+            }
+
+            if (firstCol == null || lastCol == null)
+            {
+                continue;
+            }
+
+            first = first == null ? firstCol : Math.Min(first.Value, firstCol.Value);
+            last = last == null ? lastCol : Math.Max(last.Value, lastCol.Value);
+            if (rowRange == null && firstRow != null && lastRow != null)
+            {
+                rowRange = firstRow == lastRow ? firstRow.ToString() : $"{firstRow}-{lastRow}";
+            }
+        }
+
+        return (first, last, rowRange);
+    }
+
+    static (uint? Column, uint? Row) ParseCellRef(string reference)
+    {
+        uint column = 0;
+        var i = 0;
+        while (i < reference.Length)
+        {
+            var c = reference[i];
+            if (c is >= 'A' and <= 'Z')
+            {
+                column = column * 26 + (uint)(c - 'A' + 1);
+                i++;
+            }
+            else if (c is >= 'a' and <= 'z')
+            {
+                column = column * 26 + (uint)(c - 'a' + 1);
+                i++;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        if (column == 0)
+        {
+            return (null, null);
+        }
+
+        if (i >= reference.Length)
+        {
+            return (column, null);
+        }
+
+        if (uint.TryParse(reference.AsSpan(i), out var row))
+        {
+            return (column, row);
+        }
+
+        return (column, null);
+    }
+
+    static HashSet<uint> FindRequiredHighlightColumns(WorksheetPart worksheetPart, WorkbookPart workbookPart)
+    {
+        var result = new HashSet<uint>();
+        if (worksheetPart.Worksheet == null)
+        {
+            return result;
+        }
+
+        foreach (var cf in worksheetPart.Worksheet.Elements<ConditionalFormatting>())
+        {
+            var hasBlankRule = cf.Elements<ConditionalFormattingRule>()
+                .Any(_ => _.Type?.Value == ConditionalFormatValues.ContainsBlanks);
+            if (!hasBlankRule)
+            {
+                continue;
+            }
+
+            var sqref = cf.SequenceOfReferences?.InnerText;
+            if (sqref == null)
+            {
+                continue;
+            }
+
+            var (first, last, _) = ParseSqref(sqref);
+            if (first == null || last == null)
+            {
+                continue;
+            }
+
+            for (var col = first.Value; col <= last.Value; col++)
+            {
+                result.Add(col);
+            }
         }
 
         return result;
