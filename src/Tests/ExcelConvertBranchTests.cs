@@ -11,6 +11,58 @@ public class ExcelConvertBranchTests
         return Verify(document);
     }
 
+    // Excel's spec for t="b" cells uses "1"/"0", but the OpenXml SDK's CellValue(bool)
+    // ctor writes "true"/"false" via XmlConvert.ToString. Both forms appear in real-world
+    // spreadsheets, so the reader must accept either. One row, one cell per variant —
+    // the verified csv has the expected truthy/falsy mapping inline.
+    [Test]
+    public Task BooleanCellTextVariants()
+    {
+        string[] variants = ["1", "0", "true", "false", "True", "False", "TRUE", "FALSE", "", "yes"];
+        using var document = CreateBooleanVariantsDocument(variants);
+        return Verify(document);
+    }
+
+    static SpreadsheetDocument CreateBooleanVariantsDocument(IReadOnlyList<string> variants)
+    {
+        var document = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
+        var wbPart = document.AddWorkbookPart();
+        wbPart.Workbook = new(new Sheets());
+
+        var wsPart = wbPart.AddNewPart<WorksheetPart>();
+
+        var headerRow = new Row { RowIndex = 1u };
+        var valueRow = new Row { RowIndex = 2u };
+        foreach (var variant in variants)
+        {
+            headerRow.Append(
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new Text(variant.Length == 0 ? "(empty)" : variant))
+                });
+            valueRow.Append(
+                new Cell
+                {
+                    DataType = CellValues.Boolean,
+                    CellValue = new(variant)
+                });
+        }
+
+        wsPart.Worksheet = new(new SheetData(headerRow, valueRow));
+
+        var sheets = wbPart.Workbook.GetFirstChild<Sheets>()!;
+        sheets.Append(
+            new Sheet
+            {
+                Id = wbPart.GetIdOfPart(wsPart),
+                SheetId = 1,
+                Name = "Sheet1"
+            });
+
+        return document;
+    }
+
     static SpreadsheetDocument CreateDocument()
     {
         var document = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
