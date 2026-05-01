@@ -22,7 +22,9 @@
               Contract
             ],
             AllowBlank: false,
+            ShowInputMessage: true,
             InputMessage: Pick one,
+            ShowErrorMessage: true,
             ErrorTitle: Invalid,
             ErrorMessage: Pick a status from the list.,
             Range: 2-100
@@ -40,6 +42,8 @@
             Min: 2020-01-01,
             Max: 2030-12-31,
             AllowBlank: true,
+            ShowInputMessage: false,
+            ShowErrorMessage: false,
             Range: 2-100
           }
         },
@@ -55,6 +59,8 @@
             Min: 0,
             Max: 100,
             AllowBlank: true,
+            ShowInputMessage: false,
+            ShowErrorMessage: false,
             Range: 2-100
           }
         },

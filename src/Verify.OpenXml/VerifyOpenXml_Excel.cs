@@ -64,16 +64,17 @@ public static partial class VerifyOpenXml
     internal static List<SheetInfo> BuildSheetInfos(WorkbookPart workbookPart)
     {
         var sheetInfos = new List<SheetInfo>();
-        var propertyNames = ReadColumnPropertyNames(workbookPart);
+        var metadata = ReadColumnMetadata(workbookPart);
 
         foreach (var sheetElement in workbookPart.Workbook!.Sheets!.Elements<Sheet>())
         {
-            var worksheetPart = (WorksheetPart) workbookPart.GetPartById(sheetElement.Id!);
+            var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheetElement.Id!);
             var sheetName = sheetElement.Name!.Value!;
             var columns = GetColumnInfos(worksheetPart, workbookPart);
-            if (columns != null && propertyNames.TryGetValue(sheetName, out var sheetProps))
+            if (columns != null &&
+                metadata.TryGetValue(sheetName, out var sheetMetadata))
             {
-                ApplyPropertyNames(columns, sheetProps);
+                ApplyColumnMetadata(columns, sheetMetadata);
             }
 
             var sheetInfo = new SheetInfo
@@ -88,53 +89,63 @@ public static partial class VerifyOpenXml
         return sheetInfos;
     }
 
-    static void ApplyPropertyNames(List<ColumnInfo> columns, IReadOnlyDictionary<int, string> propertyNames)
+    static void ApplyColumnMetadata(
+        List<ColumnInfo> columns,
+        IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>> metadata)
     {
         for (var i = 0; i < columns.Count; i++)
         {
-            if (propertyNames.TryGetValue(i + 1, out var name))
+            if (!metadata.TryGetValue(i + 1, out var attrs))
             {
-                var existing = columns[i];
-                columns[i] = new()
-                {
-                    Name = existing.Name,
-                    PropertyName = name,
-                    Width = existing.Width,
-                    ContainsRichText = existing.ContainsRichText,
-                    NumberFormat = existing.NumberFormat,
-                    Locked = existing.Locked,
-                    RequiredHighlight = existing.RequiredHighlight,
-                    Validation = existing.Validation
-                };
+                continue;
             }
+
+            var existing = columns[i];
+            columns[i] = new()
+            {
+                Name = existing.Name,
+                Metadata = attrs,
+                Width = existing.Width,
+                ContainsRichText = existing.ContainsRichText,
+                NumberFormat = existing.NumberFormat,
+                Locked = existing.Locked,
+                RequiredHighlight = existing.RequiredHighlight,
+                Validation = existing.Validation
+            };
         }
     }
 
-    static Dictionary<string, IReadOnlyDictionary<int, string>> ReadColumnPropertyNames(WorkbookPart workbookPart)
+    /// <summary>
+    /// Reads column metadata from any custom XML part whose contents include
+    /// <c>&lt;sheet name="…"&gt;&lt;column index="N" …/&gt;&lt;/sheet&gt;</c> elements (any wrapping
+    /// element / namespace). All attributes on <c>&lt;column&gt;</c> other than <c>index</c> are
+    /// surfaced as-is on <see cref="ColumnInfo.Metadata"/>, so producers can attach arbitrary
+    /// key/value annotations without coordinating schema changes with Verify.OpenXml.
+    /// </summary>
+    static Dictionary<string, IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>>> ReadColumnMetadata(WorkbookPart workbookPart)
     {
-        var result = new Dictionary<string, IReadOnlyDictionary<int, string>>();
-        const string ns = "http://schemas.simoncropp.com/excelsior/v1";
+        var result = new Dictionary<string, IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>>>();
 
         foreach (var part in workbookPart.CustomXmlParts)
         {
-            using var stream = part.GetStream(System.IO.FileMode.Open, System.IO.FileAccess.Read);
-            System.Xml.Linq.XDocument doc;
+            using var stream = part.GetStream(FileMode.Open, FileAccess.Read);
+            XDocument doc;
             try
             {
-                doc = System.Xml.Linq.XDocument.Load(stream);
+                doc = XDocument.Load(stream);
             }
             catch
             {
                 continue;
             }
 
-            var root = doc.Root;
-            if (root == null || root.Name.NamespaceName != ns || root.Name.LocalName != "excelsior")
+            if (doc.Root == null)
             {
                 continue;
             }
 
-            foreach (var sheetElement in root.Elements(System.Xml.Linq.XName.Get("sheet", ns)))
+            // Find any <sheet name="..."> elements anywhere in the document — namespace agnostic.
+            foreach (var sheetElement in doc.Descendants().Where(_ => _.Name.LocalName == "sheet"))
             {
                 var sheetName = sheetElement.Attribute("name")?.Value;
                 if (sheetName == null)
@@ -142,18 +153,37 @@ public static partial class VerifyOpenXml
                     continue;
                 }
 
-                var columnMap = new Dictionary<int, string>();
-                foreach (var col in sheetElement.Elements(System.Xml.Linq.XName.Get("column", ns)))
+                var columnMap = new Dictionary<int, IReadOnlyDictionary<string, string>>();
+                foreach (var col in sheetElement.Elements().Where(_ => _.Name.LocalName == "column"))
                 {
                     var indexAttr = col.Attribute("index")?.Value;
-                    var prop = col.Attribute("property")?.Value;
-                    if (indexAttr != null && prop != null && int.TryParse(indexAttr, out var index))
+                    if (indexAttr == null ||
+                        !int.TryParse(indexAttr, out var index))
                     {
-                        columnMap[index] = prop;
+                        continue;
+                    }
+
+                    var attrs = new Dictionary<string, string>();
+                    foreach (var attr in col.Attributes())
+                    {
+                        if (attr.Name.LocalName == "index")
+                        {
+                            continue;
+                        }
+
+                        attrs[attr.Name.LocalName] = attr.Value;
+                    }
+
+                    if (attrs.Count > 0)
+                    {
+                        columnMap[index] = attrs;
                     }
                 }
 
-                result[sheetName] = columnMap;
+                if (columnMap.Count > 0)
+                {
+                    result[sheetName] = columnMap;
+                }
             }
         }
 
@@ -209,8 +239,6 @@ public static partial class VerifyOpenXml
 
     internal static List<ColumnInfo>? GetColumnInfos(WorksheetPart worksheetPart, WorkbookPart workbookPart)
     {
-        var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable?.Elements<SharedStringItem>().ToList();
-
         // Get the first row to extract column names
         var firstRow = worksheetPart.Worksheet!
             .Descendants<Row>()
@@ -245,6 +273,8 @@ public static partial class VerifyOpenXml
                 }
             }
         }
+
+        var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable?.Elements<SharedStringItem>().ToList();
 
         var richTextColumns = FindRichTextColumns(worksheetPart, sharedStringItems, firstRow.RowIndex?.Value);
         var validationsByColumn = BuildValidationsByColumn(worksheetPart);
@@ -358,46 +388,47 @@ public static partial class VerifyOpenXml
             return result;
         }
 
-        foreach (var dv in dataValidations.Elements<DataValidation>())
+        foreach (var validation in dataValidations.Elements<DataValidation>())
         {
-            var sqref = dv.SequenceOfReferences?.InnerText;
+            var sqref = validation.SequenceOfReferences?.InnerText;
             if (sqref == null)
             {
                 continue;
             }
 
             var (firstColumn, lastColumn, range) = ParseSqref(sqref);
-            if (firstColumn == null || lastColumn == null)
+            if (firstColumn == null ||
+                lastColumn == null)
             {
                 continue;
             }
 
-            var info = BuildValidationInfo(dv, range);
-            for (var col = firstColumn.Value; col <= lastColumn.Value; col++)
+            var info = BuildValidationInfo(validation, range);
+            for (var column = firstColumn.Value; column <= lastColumn.Value; column++)
             {
-                result[col] = info;
+                result[column] = info;
             }
         }
 
         return result;
     }
 
-    static ColumnValidationInfo BuildValidationInfo(DataValidation dv, string? range)
+    static ColumnValidationInfo BuildValidationInfo(DataValidation validation, string? range)
     {
-        var type = dv.Type?.InnerText;
-        var op = dv.Operator?.InnerText;
+        var type = validation.Type?.InnerText;
+        var op = validation.Operator?.InnerText;
         IReadOnlyList<string>? allowedValues = null;
         string? min = null;
         string? max = null;
 
-        var f1 = dv.Formula1?.Text;
-        var f2 = dv.Formula2?.Text;
+        var f1 = validation.Formula1?.Text;
+        var f2 = validation.Formula2?.Text;
 
-        if (dv.Type?.Value == DataValidationValues.List && f1 != null)
+        if (validation.Type?.Value == DataValidationValues.List && f1 != null)
         {
             allowedValues = ParseListFormula(f1);
         }
-        else if (dv.Type?.Value == DataValidationValues.Date)
+        else if (validation.Type?.Value == DataValidationValues.Date)
         {
             min = ParseDateFormula(f1);
             max = ParseDateFormula(f2);
@@ -415,14 +446,14 @@ public static partial class VerifyOpenXml
             AllowedValues = allowedValues,
             Min = min,
             Max = max,
-            AllowBlank = dv.AllowBlank?.Value ?? false,
-            ShowInputMessage = dv.ShowInputMessage?.Value ?? false,
-            InputTitle = dv.PromptTitle?.Value,
-            InputMessage = dv.Prompt?.Value,
-            ShowErrorMessage = dv.ShowErrorMessage?.Value ?? false,
-            ErrorStyle = dv.ErrorStyle?.InnerText,
-            ErrorTitle = dv.ErrorTitle?.Value,
-            ErrorMessage = dv.Error?.Value,
+            AllowBlank = validation.AllowBlank?.Value ?? false,
+            ShowInputMessage = validation.ShowInputMessage?.Value ?? false,
+            InputTitle = validation.PromptTitle?.Value,
+            InputMessage = validation.Prompt?.Value,
+            ShowErrorMessage = validation.ShowErrorMessage?.Value ?? false,
+            ErrorStyle = validation.ErrorStyle?.InnerText,
+            ErrorTitle = validation.ErrorTitle?.Value,
+            ErrorMessage = validation.Error?.Value,
             Range = range
         };
     }
@@ -447,9 +478,9 @@ public static partial class VerifyOpenXml
             return null;
         }
 
-        if (double.TryParse(formula, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var oa))
+        if (double.TryParse(formula, NumberStyles.Float, CultureInfo.InvariantCulture, out var oa))
         {
-            return DateTime.FromOADate(oa).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            return DateTime.FromOADate(oa).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         }
 
         return formula;
@@ -582,7 +613,8 @@ public static partial class VerifyOpenXml
             foreach (var cell in row.Elements<Cell>())
             {
                 var colIndex = GetColumnIndex(cell);
-                if (colIndex == null || richTextColumns.Contains(colIndex.Value))
+                if (colIndex == null ||
+                    richTextColumns.Contains(colIndex.Value))
                 {
                     continue;
                 }
@@ -630,11 +662,11 @@ public static partial class VerifyOpenXml
         {
             if (c is >= 'A' and <= 'Z')
             {
-                index = index * 26 + (uint) (c - 'A' + 1);
+                index = index * 26 + (uint)(c - 'A' + 1);
             }
             else if (c is >= 'a' and <= 'z')
             {
-                index = index * 26 + (uint) (c - 'a' + 1);
+                index = index * 26 + (uint)(c - 'a' + 1);
             }
             else
             {
@@ -672,7 +704,7 @@ public static partial class VerifyOpenXml
 
         foreach (var sheet in workbookPart.Workbook!.Sheets!.Elements<Sheet>())
         {
-            var worksheetPart = (WorksheetPart) workbookPart.GetPartById(sheet.Id!);
+            var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id!);
 
             var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable?.Elements<SharedStringItem>().ToList();
             var builder = new StringBuilder();
@@ -723,6 +755,7 @@ public static partial class VerifyOpenXml
                     {
                         return result;
                     }
+
                     return text;
                 }
             }
@@ -740,6 +773,7 @@ public static partial class VerifyOpenXml
                     {
                         return result;
                     }
+
                     return dateString;
                 }
             }
@@ -759,6 +793,7 @@ public static partial class VerifyOpenXml
                         {
                             return result;
                         }
+
                         return dateString;
                     }
                     catch (ArgumentException)
@@ -795,7 +830,7 @@ public static partial class VerifyOpenXml
         var cellFormats = stylesPart.Stylesheet.CellFormats;
         var cellFormat = cellFormats
             .Elements<CellFormat>()
-            .ElementAtOrDefault((int) cell.StyleIndex.Value);
+            .ElementAtOrDefault((int)cell.StyleIndex.Value);
 
         if (cellFormat?.NumberFormatId == null)
         {
