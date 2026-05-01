@@ -25,6 +25,25 @@ class ColumnInfo
     public required string Name { get; init; }
     public double? Width { get; init; }
     public bool ContainsRichText { get; init; }
+    public string? NumberFormat { get; init; }
+    public bool? Locked { get; init; }
+    public bool RequiredHighlight { get; init; }
+    public ColumnValidationInfo? Validation { get; init; }
+}
+
+class ColumnValidationInfo
+{
+    public string? Type { get; init; }
+    public string? Operator { get; init; }
+    public IReadOnlyList<string>? AllowedValues { get; init; }
+    public string? Min { get; init; }
+    public string? Max { get; init; }
+    public bool AllowBlank { get; init; }
+    public string? InputTitle { get; init; }
+    public string? InputMessage { get; init; }
+    public string? ErrorTitle { get; init; }
+    public string? ErrorMessage { get; init; }
+    public string? Range { get; init; }
 }
 
 class WorkbookProtectionInfo
