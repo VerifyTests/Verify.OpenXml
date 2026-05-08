@@ -76,7 +76,11 @@ public class PowerpointUnitTests
         slidePart.Slide = new(
             new CommonSlideData(new ShapeTree(
                 new NonVisualGroupShapeProperties(
-                    new NonVisualDrawingProperties { Id = 1, Name = "" },
+                    new NonVisualDrawingProperties
+                    {
+                        Id = 1,
+                        Name = ""
+                    },
                     new NonVisualGroupShapeDrawingProperties(),
                     new ApplicationNonVisualDrawingProperties()),
                 new GroupShapeProperties(new A.TransformGroup()))));
@@ -125,7 +129,7 @@ public class PowerpointUnitTests
     {
         var slidePart = presPart.AddNewPart<SlidePart>();
         var paragraphs = lines.Select(_ =>
-            (OpenXmlElement) new A.Paragraph(
+            (OpenXmlElement)new A.Paragraph(
                 new A.Run(new A.RunProperties(), new A.Text(_)))).ToArray();
         slidePart.Slide = BuildSlide(paragraphs);
         return slidePart;
@@ -148,7 +152,11 @@ public class PowerpointUnitTests
 
         var shape = new Shape(
             new NonVisualShapeProperties(
-                new NonVisualDrawingProperties { Id = 2, Name = "Text" },
+                new NonVisualDrawingProperties
+                {
+                    Id = 2,
+                    Name = "Text"
+                },
                 new NonVisualShapeDrawingProperties(),
                 new ApplicationNonVisualDrawingProperties()),
             new ShapeProperties(),
@@ -158,7 +166,11 @@ public class PowerpointUnitTests
             new CommonSlideData(
                 new ShapeTree(
                     new NonVisualGroupShapeProperties(
-                        new NonVisualDrawingProperties { Id = 1, Name = "" },
+                        new NonVisualDrawingProperties
+                        {
+                            Id = 1,
+                            Name = ""
+                        },
                         new NonVisualGroupShapeDrawingProperties(),
                         new ApplicationNonVisualDrawingProperties()),
                     new GroupShapeProperties(new A.TransformGroup()),

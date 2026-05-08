@@ -1,7 +1,6 @@
 [TestFixture]
 public class ExcelUnitTests
 {
-
     [Test]
     public void EscapeCsvValue_NoSpecial() =>
         Assert.That(VerifyOpenXml.EscapeCsvValue("plain"), Is.EqualTo("plain"));
@@ -30,7 +29,11 @@ public class ExcelUnitTests
             new(new Text("First")),
             new(new Text("Second"))
         };
-        var cell = new Cell { DataType = CellValues.SharedString, CellValue = new("1") };
+        var cell = new Cell
+        {
+            DataType = CellValues.SharedString,
+            CellValue = new("1")
+        };
         Assert.That(VerifyOpenXml.GetHeaderCellValue(cell, shared), Is.EqualTo("Second"));
     }
 
@@ -48,7 +51,10 @@ public class ExcelUnitTests
     [Test]
     public void GetHeaderCellValue_Plain()
     {
-        var cell = new Cell { CellValue = new("42") };
+        var cell = new Cell
+        {
+            CellValue = new("42")
+        };
         Assert.That(VerifyOpenXml.GetHeaderCellValue(cell, null), Is.EqualTo("42"));
     }
 
@@ -64,7 +70,10 @@ public class ExcelUnitTests
     public void IsCellDateFormatted_NoStylesPart_False()
     {
         using var doc = CreateWorkbook(addStyles: false);
-        var cell = new Cell { StyleIndex = 0 };
+        var cell = new Cell
+        {
+            StyleIndex = 0
+        };
         Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.False);
     }
 
@@ -72,7 +81,10 @@ public class ExcelUnitTests
     public void IsCellDateFormatted_BuiltInRange1()
     {
         using var doc = CreateWorkbookWithFormats(14);
-        var cell = new Cell { StyleIndex = 0 };
+        var cell = new Cell
+        {
+            StyleIndex = 0
+        };
         Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.True);
     }
 
@@ -80,7 +92,10 @@ public class ExcelUnitTests
     public void IsCellDateFormatted_BuiltInRange2()
     {
         using var doc = CreateWorkbookWithFormats(177);
-        var cell = new Cell { StyleIndex = 0 };
+        var cell = new Cell
+        {
+            StyleIndex = 0
+        };
         Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.True);
     }
 
@@ -88,7 +103,10 @@ public class ExcelUnitTests
     public void IsCellDateFormatted_BuiltInRange3()
     {
         using var doc = CreateWorkbookWithFormats(182);
-        var cell = new Cell { StyleIndex = 0 };
+        var cell = new Cell
+        {
+            StyleIndex = 0
+        };
         Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.True);
     }
 
@@ -96,7 +114,10 @@ public class ExcelUnitTests
     public void IsCellDateFormatted_CustomDateFormat()
     {
         using var doc = CreateWorkbookWithFormats(200, customFormatCode: "yyyy-mm-dd");
-        var cell = new Cell { StyleIndex = 0 };
+        var cell = new Cell
+        {
+            StyleIndex = 0
+        };
         Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.True);
     }
 
@@ -104,7 +125,10 @@ public class ExcelUnitTests
     public void IsCellDateFormatted_CustomNonDateFormat()
     {
         using var doc = CreateWorkbookWithFormats(201, customFormatCode: "0.00");
-        var cell = new Cell { StyleIndex = 0 };
+        var cell = new Cell
+        {
+            StyleIndex = 0
+        };
         Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.False);
     }
 
@@ -112,7 +136,10 @@ public class ExcelUnitTests
     public void IsCellDateFormatted_UnknownFormatId_False()
     {
         using var doc = CreateWorkbookWithFormats(500); // not built-in, not in numberingFormats
-        var cell = new Cell { StyleIndex = 0 };
+        var cell = new Cell
+        {
+            StyleIndex = 0
+        };
         Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.False);
     }
 
@@ -137,15 +164,35 @@ public class ExcelUnitTests
 
         var sheetData = new SheetData(
             new Row(
-                new Cell { DataType = CellValues.InlineString, InlineString = new(new Text("Name")) },
-                new Cell { DataType = CellValues.InlineString, InlineString = new(new Text("Age")) })
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new Text("Name"))
+                },
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new Text("Age"))
+                })
             {
                 RowIndex = 1u
             });
 
         var columns = new Columns(
-            new Column { Min = 1, Max = 1, Width = 20.5, CustomWidth = true },
-            new Column { Min = 2, Max = 2, Width = 10.123, CustomWidth = false });
+            new Column
+            {
+                Min = 1,
+                Max = 1,
+                Width = 20.5,
+                CustomWidth = true
+            },
+            new Column
+            {
+                Min = 2,
+                Max = 2,
+                Width = 10.123,
+                CustomWidth = false
+            });
 
         wsPart.Worksheet = new(columns, sheetData);
 
@@ -174,14 +221,34 @@ public class ExcelUnitTests
         var wsPart = wbPart.AddNewPart<WorksheetPart>();
         var sheetData = new SheetData(
             new Row(
-                new Cell { DataType = CellValues.InlineString, InlineString = new(new Text("ColA")), CellReference = "A1" },
-                new Cell { DataType = CellValues.InlineString, InlineString = new(new Text("ColB")), CellReference = "B1" })
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new Text("ColA")),
+                    CellReference = "A1"
+                },
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new Text("ColB")),
+                    CellReference = "B1"
+                })
             {
                 RowIndex = 1u
             },
             new Row(
-                new Cell { DataType = CellValues.SharedString, CellValue = new("0"), CellReference = "A2" },
-                new Cell { DataType = CellValues.SharedString, CellValue = new("1"), CellReference = "B2" })
+                new Cell
+                {
+                    DataType = CellValues.SharedString,
+                    CellValue = new("0"),
+                    CellReference = "A2"
+                },
+                new Cell
+                {
+                    DataType = CellValues.SharedString,
+                    CellValue = new("1"),
+                    CellReference = "B2"
+                })
             {
                 RowIndex = 2u
             });
@@ -202,7 +269,12 @@ public class ExcelUnitTests
         var wsPart = wbPart.AddNewPart<WorksheetPart>();
         var sheetData = new SheetData(
             new Row(
-                new Cell { DataType = CellValues.InlineString, InlineString = new(new Text("Col")), CellReference = "A1" })
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new Text("Col")),
+                    CellReference = "A1"
+                })
             {
                 RowIndex = 1u
             },
@@ -272,6 +344,7 @@ public class ExcelUnitTests
             var stylesPart = wbPart.AddNewPart<WorkbookStylesPart>();
             stylesPart.Stylesheet = new();
         }
+
         return doc;
     }
 
@@ -280,12 +353,20 @@ public class ExcelUnitTests
         var doc = CreateWorkbook(addStyles: true);
         var stylesPart = doc.WorkbookPart!.WorkbookStylesPart!;
         stylesPart.Stylesheet!.Append(new CellFormats(
-            new CellFormat { NumberFormatId = numFormatId }));
+            new CellFormat
+            {
+                NumberFormatId = numFormatId
+            }));
 
         if (customFormatCode != null)
         {
-            stylesPart.Stylesheet.Append(new NumberingFormats(
-                new NumberingFormat { NumberFormatId = numFormatId, FormatCode = customFormatCode }));
+            stylesPart.Stylesheet.Append(
+                new NumberingFormats(
+                    new NumberingFormat
+                    {
+                        NumberFormatId = numFormatId,
+                        FormatCode = customFormatCode
+                    }));
         }
 
         return doc;

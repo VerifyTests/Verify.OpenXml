@@ -31,8 +31,14 @@ public class ExcelConvertBranchTests
 
         var wsPart = wbPart.AddNewPart<WorksheetPart>();
 
-        var headerRow = new Row { RowIndex = 1u };
-        var valueRow = new Row { RowIndex = 2u };
+        var headerRow = new Row
+        {
+            RowIndex = 1u
+        };
+        var valueRow = new Row
+        {
+            RowIndex = 2u
+        };
         foreach (var variant in variants)
         {
             headerRow.Append(

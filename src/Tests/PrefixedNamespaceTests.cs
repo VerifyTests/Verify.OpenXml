@@ -31,19 +31,24 @@ public class PrefixedNamespaceTests
 
         var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>()!;
 
-        var row = new Row { RowIndex = 1 };
-        row.Append(new Cell
+        var row = new Row
         {
-            CellReference = "A1",
-            DataType = CellValues.InlineString,
-            InlineString = new(new Text("Hello"))
-        });
-        row.Append(new Cell
-        {
-            CellReference = "B1",
-            DataType = CellValues.InlineString,
-            InlineString = new(new Text("World"))
-        });
+            RowIndex = 1
+        };
+        row.Append(
+            new Cell
+            {
+                CellReference = "A1",
+                DataType = CellValues.InlineString,
+                InlineString = new(new Text("Hello"))
+            });
+        row.Append(
+            new Cell
+            {
+                CellReference = "B1",
+                DataType = CellValues.InlineString,
+                InlineString = new(new Text("World"))
+            });
         sheetData.Append(row);
 
         return document;

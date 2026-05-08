@@ -94,7 +94,12 @@ public class WordUnitTests
     [Test]
     public void AppendWordParagraphText_PageBreak()
     {
-        var run = new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText("Before"), new Break { Type = BreakValues.Page });
+        var run = new DocumentFormat.OpenXml.Wordprocessing.Run(
+            new WordText("Before"),
+            new Break
+            {
+                Type = BreakValues.Page
+            });
         Assert.That(Render(new(run)), Does.Contain("--- Page Break ---"));
     }
 
@@ -137,10 +142,30 @@ public class WordUnitTests
         using var doc = CreateDoc();
         var fontPart = doc.MainDocumentPart!.AddNewPart<FontTablePart>();
         fontPart.Fonts = new(
-            MakeFont("Regular", new EmbedRegularFont { FontKey = "{x}" }),
-            MakeFont("Bold", new EmbedBoldFont { FontKey = "{x}" }),
-            MakeFont("Italic", new EmbedItalicFont { FontKey = "{x}" }),
-            MakeFont("BoldItalic", new EmbedBoldItalicFont { FontKey = "{x}" }),
+            MakeFont(
+                "Regular",
+                new EmbedRegularFont
+                {
+                    FontKey = "{x}"
+                }),
+            MakeFont(
+                "Bold",
+                new EmbedBoldFont
+                {
+                    FontKey = "{x}"
+                }),
+            MakeFont(
+                "Italic",
+                new EmbedItalicFont
+                {
+                    FontKey = "{x}"
+                }),
+            MakeFont(
+                "BoldItalic",
+                new EmbedBoldItalicFont
+                {
+                    FontKey = "{x}"
+                }),
             MakeFont("NoEmbed"),
             new WordFont());
 
@@ -246,11 +271,15 @@ public class WordUnitTests
 
     static WordFont MakeFont(string name, params OpenXmlElement[] children)
     {
-        var font = new WordFont { Name = name };
+        var font = new WordFont
+        {
+            Name = name
+        };
         foreach (var child in children)
         {
             font.Append(child);
         }
+
         return font;
     }
 

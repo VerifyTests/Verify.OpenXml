@@ -24,7 +24,12 @@ public class ExcelProtectionTests
 
         var wsPart = wbPart.AddNewPart<WorksheetPart>();
         var sheetData = new SheetData(
-            new Row(new Cell { DataType = CellValues.InlineString, InlineString = new(new Text("Header")) })
+            new Row(
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new Text("Header"))
+                })
             {
                 RowIndex = 1u
             });
