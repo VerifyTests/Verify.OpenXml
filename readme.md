@@ -8,7 +8,9 @@ Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of
 
 Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
 
+
 ## Features
+
 
 ### Excel (xlsx)
 
@@ -17,6 +19,7 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
  * Captures document metadata (title, subject, creator, keywords, category, etc.)
  * Supports date scrubbing and GUID scrubbing for deterministic tests
  * Generates deterministic XLSX output using DeterministicIoPackaging
+
 
 ### Word (docx)
 
@@ -27,6 +30,7 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
  * Generates deterministic DOCX output using DeterministicIoPackaging
  * Optionally renders each page to PNG via [Morph](https://github.com/SimonCropp/Morph) (opt-in)
 
+
 ### PowerPoint (pptx)
 
  * Extracts slide text from every slide, separated by `---`
@@ -36,7 +40,6 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
 
 **See [Milestones](../../milestones?state=closed) for release notes.**
 
- 
 
 ## Sponsors
 
@@ -46,6 +49,7 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
 [Entity Framework Extensions](https://entityframework-extensions.net/?utm_source=simoncropp&utm_medium=Verify.OpenXML) is a major sponsor and is proud to contribute to the development this project.
 
 [![Entity Framework Extensions](https://raw.githubusercontent.com/VerifyTests/Verify.OpenXML/refs/heads/main/docs/zzz.png)](https://entityframework-extensions.net/?utm_source=simoncropp&utm_medium=Verify.OpenXML)
+
 
 ### Developed using JetBrains IDEs
 
@@ -258,9 +262,10 @@ await Verify(stream, "docx")
     .UniqueForOSPlatform();
 ```
 
- * Consider Verify's image comparison tooling (e.g. [`Verify.ImageMagick`](https://github.com/VerifyTests/Verify.ImageMagick)) for tolerance-based PNG diffing.
+ * Consider [PNG SSIM comparer](https://github.com/VerifyTests/Verify/blob/main/docs/comparer.md#png-ssim-comparer) for tolerance-based image diffing.
 
 See [Verify Naming docs](https://github.com/VerifyTests/Verify/blob/main/docs/naming.md) for the full list of `UniqueFor*` modifiers.
+
 
 ##### Sharing one test suite across both backends
 
