@@ -63,9 +63,9 @@ public static partial class VerifyOpenXml
             {
                 DeterministicRendering = true
             });
-        for (var i = 0; i < pages.Count; i++)
+        foreach (var page in pages)
         {
-            targets.Add(new("png", new MemoryStream(pages[i]), $"page{i + 1:D2}"));
+            targets.Add(new("png", new MemoryStream(page)));
         }
     }
 #endif
