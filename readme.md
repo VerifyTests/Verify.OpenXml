@@ -50,7 +50,6 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
 
 [![Entity Framework Extensions](https://raw.githubusercontent.com/VerifyTests/Verify.OpenXML/refs/heads/main/docs/zzz.png)](https://entityframework-extensions.net/?utm_source=simoncropp&utm_medium=Verify.OpenXML)
 
-
 ### Developed using JetBrains IDEs
 
 [![JetBrains logo.](https://raw.githubusercontent.com/VerifyTests/Verify.OpenXml/main/docs/jetbrains.png)](https://jb.gg/OpenSourceSupport)<!-- endInclude -->
