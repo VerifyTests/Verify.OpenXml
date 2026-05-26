@@ -47,7 +47,13 @@ public static partial class VerifyOpenXml
         sourceStream.Position = 0;
         var resultStream = DeterministicPackage.Convert(sourceStream);
 
-        List<Target> targets = [new("xlsx", resultStream)];
+        List<Target> targets =
+        [
+            new("xlsx", resultStream)
+            {
+                BypassComparersForSubsequentOnDifference = true
+            }
+        ];
         if (sheets.Count == 1)
         {
             var (csv, _) = sheets[0];
