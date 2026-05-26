@@ -23,7 +23,13 @@ public static partial class VerifyOpenXml
         sourceStream.Position = 0;
         var resultStream = DeterministicPackage.Convert(sourceStream);
 
-        List<Target> targets = [new("pptx", resultStream)];
+        List<Target> targets =
+        [
+            new("pptx", resultStream)
+            {
+                BypassComparersForSubsequentOnDifference = true
+            }
+        ];
 
         if (!string.IsNullOrWhiteSpace(info.Text))
         {
