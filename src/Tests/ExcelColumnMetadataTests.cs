@@ -37,6 +37,23 @@ public class ExcelColumnMetadataTests
     }
 
     [Test]
+    public Task SheetMetadataFromCustomXml()
+    {
+        // Sheet-level attributes (anything other than `name`) flow to SheetInfo.Metadata. The
+        // mechanism mirrors ColumnInfo.Metadata so producers like Excelsior can attach per-sheet
+        // annotations such as `bannerRows="1"` without coordinating schema changes here.
+        using var document = CreateDocument(
+            """
+            <columnMetadata xmlns="urn:test:column-metadata">
+              <sheet name="Sheet1" bannerRows="1" origin="import">
+                <column index="1" property="Id" />
+              </sheet>
+            </columnMetadata>
+            """);
+        return Verify(document);
+    }
+
+    [Test]
     public Task ColumnMetadataMissingPartIsBenign()
     {
         // No custom XML part at all — Metadata stays null on each column.

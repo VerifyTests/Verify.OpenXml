@@ -74,22 +74,24 @@ public static partial class VerifyOpenXml
     internal static List<SheetInfo> BuildSheetInfos(WorkbookPart workbookPart)
     {
         var sheetInfos = new List<SheetInfo>();
-        var metadata = ReadColumnMetadata(workbookPart);
+        var metadata = ReadSheetMetadata(workbookPart);
 
         foreach (var sheetElement in workbookPart.Workbook!.Sheets!.Elements<Sheet>())
         {
             var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheetElement.Id!);
             var sheetName = sheetElement.Name!.Value!;
             var columns = GetColumnInfos(worksheetPart, workbookPart);
+            metadata.TryGetValue(sheetName, out var sheetMetadata);
             if (columns != null &&
-                metadata.TryGetValue(sheetName, out var sheetMetadata))
+                sheetMetadata is { Columns.Count: > 0 })
             {
-                ApplyColumnMetadata(columns, sheetMetadata);
+                ApplyColumnMetadata(columns, sheetMetadata.Columns);
             }
 
             var sheetInfo = new SheetInfo
             {
                 Name = sheetName,
+                Metadata = sheetMetadata is { SheetAttributes.Count: > 0 } ? sheetMetadata.SheetAttributes : null,
                 Columns = columns is { Count: > 0 } ? columns : null,
                 Protection = BuildSheetProtectionInfo(worksheetPart)
             };
@@ -98,6 +100,10 @@ public static partial class VerifyOpenXml
 
         return sheetInfos;
     }
+
+    record SheetMetadata(
+        IReadOnlyDictionary<string, string> SheetAttributes,
+        IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>> Columns);
 
     static void ApplyColumnMetadata(
         List<ColumnInfo> columns,
@@ -127,15 +133,17 @@ public static partial class VerifyOpenXml
     }
 
     /// <summary>
-    /// Reads column metadata from any custom XML part whose contents include
-    /// <c>&lt;sheet name="…"&gt;&lt;column index="N" …/&gt;&lt;/sheet&gt;</c> elements (any wrapping
-    /// element / namespace). All attributes on <c>&lt;column&gt;</c> other than <c>index</c> are
-    /// surfaced as-is on <see cref="ColumnInfo.Metadata"/>, so producers can attach arbitrary
-    /// key/value annotations without coordinating schema changes with Verify.OpenXml.
+    /// Reads sheet and column metadata from any custom XML part whose contents include
+    /// <c>&lt;sheet name="…" {anyAttr}&gt;&lt;column index="N" {anyAttr}/&gt;&lt;/sheet&gt;</c>
+    /// elements (any wrapping element / namespace). All non-<c>name</c> attributes on
+    /// <c>&lt;sheet&gt;</c> are surfaced on <see cref="SheetInfo.Metadata"/>; all non-<c>index</c>
+    /// attributes on <c>&lt;column&gt;</c> are surfaced on <see cref="ColumnInfo.Metadata"/>.
+    /// Producers can attach arbitrary key/value annotations at either level without coordinating
+    /// schema changes with Verify.OpenXml.
     /// </summary>
-    static Dictionary<string, IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>>> ReadColumnMetadata(WorkbookPart workbookPart)
+    static Dictionary<string, SheetMetadata> ReadSheetMetadata(WorkbookPart workbookPart)
     {
-        var result = new Dictionary<string, IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>>>();
+        var result = new Dictionary<string, SheetMetadata>();
 
         foreach (var part in workbookPart.CustomXmlParts)
         {
@@ -162,6 +170,17 @@ public static partial class VerifyOpenXml
                 if (sheetName == null)
                 {
                     continue;
+                }
+
+                var sheetAttrs = new Dictionary<string, string>();
+                foreach (var attr in sheetElement.Attributes())
+                {
+                    if (attr.Name.LocalName == "name")
+                    {
+                        continue;
+                    }
+
+                    sheetAttrs[attr.Name.LocalName] = attr.Value;
                 }
 
                 var columnMap = new Dictionary<int, IReadOnlyDictionary<string, string>>();
@@ -191,9 +210,10 @@ public static partial class VerifyOpenXml
                     }
                 }
 
-                if (columnMap.Count > 0)
+                if (sheetAttrs.Count > 0 ||
+                    columnMap.Count > 0)
                 {
-                    result[sheetName] = columnMap;
+                    result[sheetName] = new(sheetAttrs, columnMap);
                 }
             }
         }

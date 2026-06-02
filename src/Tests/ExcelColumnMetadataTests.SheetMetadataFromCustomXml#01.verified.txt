@@ -1,0 +1,32 @@
+﻿{
+  Sheets: [
+    {
+      Name: Sheet1,
+      Metadata: {
+        bannerRows: 1,
+        origin: import
+      },
+      Columns: [
+        {
+          Name: Id,
+          Metadata: {
+            property: Id
+          },
+          ContainsRichText: false,
+          RequiredHighlight: false
+        },
+        {
+          Name: Name,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        },
+        {
+          Name: Notes,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        }
+      ]
+    }
+  ],
+  WorksheetCount: 1
+}
