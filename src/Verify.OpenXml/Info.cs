@@ -30,6 +30,7 @@ class ColumnInfo
     public bool? Locked { get; init; }
     public bool RequiredHighlight { get; init; }
     public ColumnValidationInfo? Validation { get; init; }
+    public string? Note { get; init; }
 }
 
 class ColumnValidationInfo
