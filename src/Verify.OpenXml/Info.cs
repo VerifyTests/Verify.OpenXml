@@ -16,6 +16,13 @@ class ExcelInfo
 class SheetInfo
 {
     public required string Name { get; init; }
+    /// <summary>
+    /// Attributes (other than <c>name</c>) found on the matching <c>&lt;sheet&gt;</c> element in a
+    /// workbook custom XML part. Mirrors <see cref="ColumnInfo.Metadata"/> at the sheet level so
+    /// producers can attach per-sheet annotations (e.g. <c>bannerRows="1"</c>) and have them
+    /// surface in the snapshot without coordinating schema changes with Verify.OpenXml.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Metadata { get; init; }
     public IReadOnlyList<ColumnInfo>? Columns { get; init; }
     public SheetProtectionInfo? Protection { get; init; }
 }

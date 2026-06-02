@@ -54,12 +54,13 @@ public class ExcelCommentTests
         }
 
         var sheets = wbPart.Workbook.GetFirstChild<Sheets>()!;
-        sheets.Append(new Sheet
-        {
-            Id = wbPart.GetIdOfPart(wsPart),
-            SheetId = 1,
-            Name = "Sheet1"
-        });
+        sheets.Append(
+            new Sheet
+            {
+                Id = wbPart.GetIdOfPart(wsPart),
+                SheetId = 1,
+                Name = "Sheet1"
+            });
 
         return document;
 
