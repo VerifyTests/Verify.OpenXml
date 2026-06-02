@@ -1,4 +1,8 @@
-﻿using NumberingFormat = DocumentFormat.OpenXml.Spreadsheet.NumberingFormat;
+﻿using System.Diagnostics.CodeAnalysis;
+using NumberingFormat = DocumentFormat.OpenXml.Spreadsheet.NumberingFormat;
+using Comment = DocumentFormat.OpenXml.Spreadsheet.Comment;
+using CommentList = DocumentFormat.OpenXml.Spreadsheet.CommentList;
+using CommentText = DocumentFormat.OpenXml.Spreadsheet.CommentText;
 
 namespace VerifyTests;
 
@@ -116,7 +120,8 @@ public static partial class VerifyOpenXml
                 NumberFormat = existing.NumberFormat,
                 Locked = existing.Locked,
                 RequiredHighlight = existing.RequiredHighlight,
-                Validation = existing.Validation
+                Validation = existing.Validation,
+                Note = existing.Note
             };
         }
     }
@@ -285,6 +290,7 @@ public static partial class VerifyOpenXml
         var richTextColumns = FindRichTextColumns(worksheetPart, sharedStringItems, firstRow.RowIndex?.Value);
         var validationsByColumn = BuildValidationsByColumn(worksheetPart);
         var requiredColumns = FindRequiredHighlightColumns(worksheetPart);
+        var headerNotes = BuildHeaderNotes(worksheetPart, firstRow.RowIndex?.Value);
 
         var result = new List<ColumnInfo>();
         uint colIndex = 1;
@@ -302,6 +308,7 @@ public static partial class VerifyOpenXml
             }
 
             validationsByColumn.TryGetValue(colIndex, out var validation);
+            headerNotes.TryGetValue(colIndex, out var note);
 
             result.Add(
                 new()
@@ -312,7 +319,8 @@ public static partial class VerifyOpenXml
                     NumberFormat = numberFormat,
                     Locked = locked,
                     RequiredHighlight = requiredColumns.Contains(colIndex),
-                    Validation = validation
+                    Validation = validation,
+                    Note = note
                 });
 
             colIndex++;
@@ -320,6 +328,55 @@ public static partial class VerifyOpenXml
 
         return result;
     }
+
+    /// <summary>
+    /// Reads cell notes (legacy comments) anchored to the header row and keys them by column.
+    /// Notes on non-header cells are ignored — the Excel info model is column-oriented, so a
+    /// note is surfaced as an annotation of the column it heads.
+    /// </summary>
+    static Dictionary<uint, string> BuildHeaderNotes(WorksheetPart worksheetPart, uint? headerRowIndex)
+    {
+        var result = new Dictionary<uint, string>();
+        var commentList = worksheetPart
+            .GetPartsOfType<WorksheetCommentsPart>()
+            .FirstOrDefault()
+            ?.Comments
+            ?.GetFirstChild<CommentList>();
+        if (commentList == null)
+        {
+            return result;
+        }
+
+        foreach (var comment in commentList.Elements<Comment>())
+        {
+            var reference = comment.Reference?.Value;
+            if (reference == null)
+            {
+                continue;
+            }
+
+            var (column, row) = ParseCellRef(reference);
+            if (column == null ||
+                row != headerRowIndex)
+            {
+                continue;
+            }
+
+            var text = comment.GetFirstChild<CommentText>()?.InnerText;
+            if (HasText(text))
+            {
+                result[column.Value] = text;
+            }
+        }
+
+        return result;
+    }
+
+    // string.IsNullOrEmpty on net472/net48 lacks the [NotNullWhen(false)] annotation, so a
+    // direct null-check there does not flow `text` to non-null. This thin wrapper carries the
+    // annotation (the attribute itself is supplied by Polyfill on those frameworks).
+    static bool HasText([NotNullWhen(true)] string? value) =>
+        !string.IsNullOrEmpty(value);
 
     static (string? NumberFormat, bool? Locked) ReadColumnLevelStyle(WorkbookPart workbookPart, uint styleIndex)
     {
