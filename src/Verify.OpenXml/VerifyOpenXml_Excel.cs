@@ -250,11 +250,15 @@ public static partial class VerifyOpenXml
 
     internal static List<ColumnInfo>? GetColumnInfos(WorksheetPart worksheetPart, WorkbookPart workbookPart)
     {
-        // Get the first row to extract column names
+        // Locate the header row, skipping any leading "banner" rows. A banner is a single merged
+        // row of text above the header (e.g. instructions to whoever edits the sheet), emitted as
+        // one horizontal merge spanning multiple columns from column A. Treating it as the header
+        // would surface the banner text as the lone column and hide the real ones.
+        var bannerRows = FindBannerRows(worksheetPart.Worksheet!);
         var firstRow = worksheetPart.Worksheet!
             .Descendants<Row>()
             .OrderBy(_ => _.RowIndex)
-            .FirstOrDefault();
+            .FirstOrDefault(_ => _.RowIndex?.Value is not { } rowIndex || !bannerRows.Contains(rowIndex));
 
         if (firstRow == null)
         {
@@ -324,6 +328,46 @@ public static partial class VerifyOpenXml
                 });
 
             colIndex++;
+        }
+
+        return result;
+    }
+
+    // Row indices holding a "banner": a single horizontal merge that starts at column A and spans
+    // more than one column on one row. Producers (e.g. Excelsior) emit A1:&lt;lastCol&gt;1 for an
+    // instruction row above the header, which must be skipped when reading columns.
+    static HashSet<uint> FindBannerRows(Worksheet worksheet)
+    {
+        var result = new HashSet<uint>();
+        var mergeCells = worksheet.GetFirstChild<MergeCells>();
+        if (mergeCells == null)
+        {
+            return result;
+        }
+
+        foreach (var merge in mergeCells.Elements<MergeCell>())
+        {
+            var reference = merge.Reference?.Value;
+            if (reference == null)
+            {
+                continue;
+            }
+
+            var parts = reference.Split(':');
+            if (parts.Length != 2)
+            {
+                continue;
+            }
+
+            var (startColumn, startRow) = ParseCellRef(parts[0]);
+            var (endColumn, endRow) = ParseCellRef(parts[1]);
+            if (startColumn == 1u &&
+                endColumn > startColumn &&
+                startRow != null &&
+                startRow == endRow)
+            {
+                result.Add(startRow.Value);
+            }
         }
 
         return result;
@@ -668,8 +712,10 @@ public static partial class VerifyOpenXml
         var richTextColumns = new HashSet<uint>();
         foreach (var row in worksheetPart.Worksheet!.Descendants<Row>())
         {
-            if (row.RowIndex?.Value == headerRowIndex)
+            if (row.RowIndex?.Value <= headerRowIndex)
             {
+                // Skip the header row and anything above it (e.g. a banner row); rich text there is
+                // not a property of the data column below.
                 continue;
             }
 
