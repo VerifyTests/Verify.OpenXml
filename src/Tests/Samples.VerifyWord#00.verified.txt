@@ -1,6 +1,5 @@
 ﻿{
   Properties: {
-    Creator: Test Author,
     Subject: Test Subject,
     Title: Sample Document
   },

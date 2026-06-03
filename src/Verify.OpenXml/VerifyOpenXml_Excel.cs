@@ -22,9 +22,13 @@ public static partial class VerifyOpenXml
         var sheets = Convert(document).ToList();
         var workbookPart = document.WorkbookPart!;
 
-        // Extract document properties
+        // Extract document properties. Creator, LastModifiedBy, Created and Modified are deliberately
+        // not surfaced: DeterministicIoPackaging's CorePatcher strips them from docProps/core.xml
+        // (they are user/time-specific), so capturing them would make this info disagree with the
+        // deterministic xlsx target that Verify re-reads as a second snapshot.
         var packageProperties = document.PackageProperties;
         var workbookProperties = workbookPart.Workbook?.WorkbookProperties;
+        var (company, manager) = ReadExtendedProperties(document);
 
         var sheetInfos = BuildSheetInfos(workbookPart);
 
@@ -34,10 +38,14 @@ public static partial class VerifyOpenXml
             WorksheetCount = sheets.Count,
             Title = packageProperties.Title,
             Subject = packageProperties.Subject,
-            Creator = packageProperties.Creator,
             Keywords = packageProperties.Keywords,
             Description = packageProperties.Description,
             Category = packageProperties.Category,
+            ContentStatus = packageProperties.ContentStatus,
+            Revision = packageProperties.Revision,
+            Company = company,
+            Manager = manager,
+            CustomProperties = ReadCustomProperties(document.CustomFilePropertiesPart),
             Date1904 = workbookProperties?.Date1904?.Value,
             CalculationMode = workbookPart.Workbook?.CalculationProperties?.CalculationMode?.HasValue == true
                 ? workbookPart.Workbook.CalculationProperties.CalculationMode.Value.ToString()
@@ -219,6 +227,13 @@ public static partial class VerifyOpenXml
         }
 
         return result;
+    }
+
+    // Company/Manager live in the extended (app) properties part, not the core package properties.
+    static (string? Company, string? Manager) ReadExtendedProperties(SpreadsheetDocument document)
+    {
+        var properties = document.ExtendedFilePropertiesPart?.Properties;
+        return (properties?.Company?.Text, properties?.Manager?.Text);
     }
 
     static WorkbookProtectionInfo? BuildWorkbookProtectionInfo(WorkbookPart workbookPart)

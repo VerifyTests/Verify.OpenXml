@@ -1,6 +1,5 @@
 ﻿{
   Properties: {
-    Creator: Verify.OpenXml Tests,
     Title: Sample Presentation
   },
   SlideCount: 1,
