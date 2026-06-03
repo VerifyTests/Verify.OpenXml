@@ -16,7 +16,8 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
 
  * Converts workbooks to CSV format for each worksheet
  * Extracts formulas and displays them alongside cell values
- * Captures document metadata (title, subject, creator, keywords, category, etc.)
+ * Captures document properties (title, subject, keywords, description, category, status, company, manager)
+ * Captures custom document properties
  * Supports date scrubbing and GUID scrubbing for deterministic tests
  * Generates deterministic XLSX output using DeterministicIoPackaging
 
@@ -24,7 +25,7 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
 ### Word (docx)
 
  * Extracts document text content from paragraphs and tables
- * Captures document properties (title, subject, creator, keywords, etc.)
+ * Captures document properties (title, subject, keywords, description, category, status, revision)
  * Captures custom document properties
  * Extracts font information
  * Generates deterministic DOCX output using DeterministicIoPackaging
@@ -34,7 +35,7 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
 ### PowerPoint (pptx)
 
  * Extracts slide text from every slide, separated by `---`
- * Captures document properties (title, subject, creator, keywords, etc.)
+ * Captures document properties (title, subject, keywords, description, category, status, revision)
  * Reports slide count
  * Generates deterministic PPTX output using DeterministicIoPackaging
 

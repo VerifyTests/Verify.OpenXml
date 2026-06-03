@@ -71,23 +71,8 @@ public static partial class VerifyOpenXml
         };
     }
 
-    internal static Dictionary<string, object?>? GetPowerpointProperties(PresentationDocument document)
-    {
-        var packageProperties = document.PackageProperties;
-        var properties = new Dictionary<string, object?>();
-
-        AddPropertyIfNotEmpty(properties, "Title", packageProperties.Title);
-        AddPropertyIfNotEmpty(properties, "Subject", packageProperties.Subject);
-        AddPropertyIfNotEmpty(properties, "Creator", packageProperties.Creator);
-        AddPropertyIfNotEmpty(properties, "Keywords", packageProperties.Keywords);
-        AddPropertyIfNotEmpty(properties, "Description", packageProperties.Description);
-        AddPropertyIfNotEmpty(properties, "Category", packageProperties.Category);
-        AddPropertyIfNotEmpty(properties, "LastModifiedBy", packageProperties.LastModifiedBy);
-        AddPropertyIfNotEmpty(properties, "ContentStatus", packageProperties.ContentStatus);
-        AddPropertyIfNotEmpty(properties, "Revision", packageProperties.Revision);
-
-        return properties.Count > 0 ? properties : null;
-    }
+    internal static Dictionary<string, object?>? GetPowerpointProperties(PresentationDocument document) =>
+        GetCoreProperties(document);
 
     internal static bool AppendSlideText(StringBuilder builder, SlidePart slidePart)
     {

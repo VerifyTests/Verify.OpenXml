@@ -28,8 +28,10 @@ public class PowerpointUnitTests
 
         var result = VerifyOpenXml.GetPowerpointProperties(doc)!;
         Assert.That(result["Title"], Is.EqualTo("T"));
-        Assert.That(result["Creator"], Is.EqualTo("C"));
         Assert.That(result["Revision"], Is.EqualTo("1"));
+        // Creator and LastModifiedBy are intentionally omitted (DeterministicIoPackaging strips them).
+        Assert.That(result.ContainsKey("Creator"), Is.False);
+        Assert.That(result.ContainsKey("LastModifiedBy"), Is.False);
     }
 
     [Test]

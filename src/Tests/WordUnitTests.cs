@@ -210,13 +210,14 @@ public class WordUnitTests
         var result = VerifyOpenXml.GetWordProperties(doc)!;
         Assert.That(result["Title"], Is.EqualTo("T"));
         Assert.That(result["Subject"], Is.EqualTo("S"));
-        Assert.That(result["Creator"], Is.EqualTo("C"));
         Assert.That(result["Keywords"], Is.EqualTo("K"));
         Assert.That(result["Description"], Is.EqualTo("D"));
         Assert.That(result["Category"], Is.EqualTo("Cat"));
-        Assert.That(result["LastModifiedBy"], Is.EqualTo("L"));
         Assert.That(result["ContentStatus"], Is.EqualTo("Draft"));
         Assert.That(result["Revision"], Is.EqualTo("1"));
+        // Creator and LastModifiedBy are intentionally omitted (DeterministicIoPackaging strips them).
+        Assert.That(result.ContainsKey("Creator"), Is.False);
+        Assert.That(result.ContainsKey("LastModifiedBy"), Is.False);
     }
 
     [Test]

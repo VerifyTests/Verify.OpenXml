@@ -127,83 +127,11 @@ public static partial class VerifyOpenXml
         );
     }
 
-    internal static Dictionary<string, object?>? GetWordProperties(WordprocessingDocument document)
-    {
-        var packageProperties = document.PackageProperties;
-        var properties = new Dictionary<string, object?>();
+    internal static Dictionary<string, object?>? GetWordProperties(WordprocessingDocument document) =>
+        GetCoreProperties(document);
 
-        AddPropertyIfNotEmpty(properties, "Title", packageProperties.Title);
-        AddPropertyIfNotEmpty(properties, "Subject", packageProperties.Subject);
-        AddPropertyIfNotEmpty(properties, "Creator", packageProperties.Creator);
-        AddPropertyIfNotEmpty(properties, "Keywords", packageProperties.Keywords);
-        AddPropertyIfNotEmpty(properties, "Description", packageProperties.Description);
-        AddPropertyIfNotEmpty(properties, "Category", packageProperties.Category);
-        AddPropertyIfNotEmpty(properties, "LastModifiedBy", packageProperties.LastModifiedBy);
-        AddPropertyIfNotEmpty(properties, "ContentStatus", packageProperties.ContentStatus);
-        AddPropertyIfNotEmpty(properties, "Revision", packageProperties.Revision);
-
-        return properties.Count > 0 ? properties : null;
-    }
-
-    static void AddPropertyIfNotEmpty(Dictionary<string, object?> properties, string key, string? value)
-    {
-        if (!string.IsNullOrWhiteSpace(value))
-        {
-            properties[key] = value;
-        }
-    }
-
-    internal static Dictionary<string, object?>? GetWordCustomProperties(WordprocessingDocument document)
-    {
-        var customFilePropertiesPart = document.CustomFilePropertiesPart;
-        if (customFilePropertiesPart?.Properties == null)
-        {
-            return null;
-        }
-
-        var properties = new Dictionary<string, object?>();
-
-        foreach (var property in customFilePropertiesPart.Properties.Elements<DocumentFormat.OpenXml.CustomProperties.CustomDocumentProperty>())
-        {
-            var name = property.Name?.Value;
-            if (name == null)
-            {
-                continue;
-            }
-
-            object? value = property.InnerText;
-
-            // Try to get typed value
-            if (property.VTBool != null)
-            {
-                value = property.VTBool.Text == "true";
-            }
-            else if (property.VTInt32 != null)
-            {
-                value = int.Parse(property.VTInt32.Text);
-            }
-            else if (property.VTFloat != null)
-            {
-                value = float.Parse(property.VTFloat.Text);
-            }
-            else if (property.VTDouble != null)
-            {
-                value = double.Parse(property.VTDouble.Text);
-            }
-            else if (property.VTDate != null)
-            {
-                value = property.VTDate.Text;
-            }
-            else if (property.VTLPWSTR != null)
-            {
-                value = property.VTLPWSTR.Text;
-            }
-
-            properties[name] = value;
-        }
-
-        return properties.Count > 0 ? properties : null;
-    }
+    internal static Dictionary<string, object?>? GetWordCustomProperties(WordprocessingDocument document) =>
+        ReadCustomProperties(document.CustomFilePropertiesPart);
 
     internal static string? GetWordDocumentText(WordprocessingDocument document)
     {

@@ -4,10 +4,14 @@ class ExcelInfo
     public required int WorksheetCount { get; init; }
     public string? Title { get; init; }
     public string? Subject { get; init; }
-    public string? Creator { get; init; }
     public string? Keywords { get; init; }
     public string? Description { get; init; }
     public string? Category { get; init; }
+    public string? ContentStatus { get; init; }
+    public string? Revision { get; init; }
+    public string? Company { get; init; }
+    public string? Manager { get; init; }
+    public Dictionary<string, object?>? CustomProperties { get; init; }
     public bool? Date1904 { get; init; }
     public string? CalculationMode { get; init; }
     public WorkbookProtectionInfo? Protection { get; init; }
