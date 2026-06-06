@@ -9,15 +9,15 @@ static class MorphRenderer
     {
         var directory = Path.GetDirectoryName(typeof(MorphRenderer).Assembly.Location)!;
 
-        var skiaPath = Path.Combine(directory, "Morph.OpenXml.Skia.dll");
-        var imageSharpPath = Path.Combine(directory, "Morph.OpenXml.ImageSharp.dll");
+        var skiaPath = Path.Combine(directory, "Morph.Skia.dll");
+        var imageSharpPath = Path.Combine(directory, "Morph.ImageSharp.dll");
 
         var hasSkia = File.Exists(skiaPath);
         var hasImageSharp = File.Exists(imageSharpPath);
 
         if (hasSkia && hasImageSharp)
         {
-            throw new("Cannot reference both Morph.OpenXml.Skia and Morph.OpenXml.ImageSharp. Pick one rendering backend.");
+            throw new("Cannot reference both Morph.Skia and Morph.ImageSharp. Pick one rendering backend.");
         }
 
         if (hasSkia)
