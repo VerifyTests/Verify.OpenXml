@@ -10,10 +10,13 @@ public static partial class VerifyOpenXml
 {
     static ConversionResult ConvertWord(Stream stream, IReadOnlyDictionary<string, object> settings)
     {
-        using var document = WordprocessingDocument.Open(stream, false, new()
-        {
-            AutoSave = false
-        });
+        using var document = WordprocessingDocument.Open(
+            stream,
+            false,
+            new()
+            {
+                AutoSave = false
+            });
         return ConvertWord(document, settings);
     }
 
