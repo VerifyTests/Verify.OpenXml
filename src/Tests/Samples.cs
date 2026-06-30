@@ -14,6 +14,10 @@ public class Samples
         VerifyFile("sample_multiple_sheets.xlsx");
 
     [Test]
+    public Task HiddenRow() =>
+        VerifyFile("sample_hidden_row.xlsx");
+
+    [Test]
     public Task DontScrub() =>
         VerifyFile("sample.xlsx")
             .DontScrubGuids().DontScrubDateTimes();
