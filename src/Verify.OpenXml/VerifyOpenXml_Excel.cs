@@ -285,15 +285,20 @@ public static partial class VerifyOpenXml
 
     internal static List<ColumnInfo>? GetColumnInfos(WorksheetPart worksheetPart, WorkbookPart workbookPart)
     {
-        // Locate the header row, skipping any leading "banner" rows. A banner is a single merged
-        // row of text above the header (e.g. instructions to whoever edits the sheet), emitted as
-        // one horizontal merge spanning multiple columns from column A. Treating it as the header
-        // would surface the banner text as the lone column and hide the real ones.
+        // Locate the header row, skipping any leading "banner" rows and cell-less rows. A banner is
+        // a single merged row of text above the header (e.g. instructions to whoever edits the
+        // sheet), emitted as one horizontal merge spanning multiple columns from column A. Treating
+        // it as the header would surface the banner text as the lone column and hide the real ones.
+        // A cell-less row — e.g. a hidden row emitted as an empty <row/> — is likewise not the
+        // header; skipping it also keeps the header row index correct for the rich-text and note
+        // lookups below, which are relative to it.
         var bannerRows = FindBannerRows(worksheetPart.Worksheet!);
         var firstRow = worksheetPart.Worksheet!
             .Descendants<Row>()
             .OrderBy(_ => _.RowIndex)
-            .FirstOrDefault(_ => _.RowIndex?.Value is not { } rowIndex || !bannerRows.Contains(rowIndex));
+            .FirstOrDefault(_ =>
+                (_.RowIndex?.Value is not { } rowIndex || !bannerRows.Contains(rowIndex)) &&
+                _.Elements<Cell>().Any());
 
         if (firstRow == null)
         {
@@ -874,8 +879,13 @@ public static partial class VerifyOpenXml
                     builder.Append(',');
                 }
 
-                builder.Length -= 1;
-                builder.AppendLine();
+                // A row with no cells (e.g. a hidden row emitted as an empty <row/>) leaves the
+                // builder untouched; guard against trimming a comma that was never appended.
+                if (builder.Length > 0)
+                {
+                    builder.Length -= 1;
+                    builder.AppendLine();
+                }
             }
 
             yield return (builder, sheet.Name!.Value!);

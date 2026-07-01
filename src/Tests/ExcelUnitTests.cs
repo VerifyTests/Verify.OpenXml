@@ -205,6 +205,43 @@ public class ExcelUnitTests
     }
 
     [Test]
+    public void GetColumnInfos_SkipsLeadingEmptyRow()
+    {
+        using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
+        var wbPart = doc.AddWorkbookPart();
+        wbPart.Workbook = new(new Sheets());
+        var wsPart = wbPart.AddNewPart<WorksheetPart>();
+
+        var sheetData = new SheetData(
+            // A leading hidden row emitted as a cell-less <row/> must not be picked as the header.
+            new Row
+            {
+                RowIndex = 1u,
+                Hidden = true
+            },
+            new Row(
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new Text("Name"))
+                },
+                new Cell
+                {
+                    DataType = CellValues.InlineString,
+                    InlineString = new(new Text("Age"))
+                })
+            {
+                RowIndex = 2u
+            });
+        wsPart.Worksheet = new(sheetData);
+
+        var result = VerifyOpenXml.GetColumnInfos(wsPart, wbPart)!;
+        Assert.That(result, Has.Count.EqualTo(2));
+        Assert.That(result[0].Name, Is.EqualTo("Name"));
+        Assert.That(result[1].Name, Is.EqualTo("Age"));
+    }
+
+    [Test]
     public void GetColumnInfos_RichText_SharedString()
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
