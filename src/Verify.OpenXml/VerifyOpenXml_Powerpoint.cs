@@ -17,6 +17,7 @@ public static partial class VerifyOpenXml
     static ConversionResult ConvertPowerpoint(PresentationDocument document, IReadOnlyDictionary<string, object> settings)
     {
         var info = GetPowerpointInfo(document);
+        var text = GetPowerpointText(document);
 
         using var sourceStream = new MemoryStream();
         document.Clone(sourceStream);
@@ -31,44 +32,47 @@ public static partial class VerifyOpenXml
             }
         ];
 
-        if (!string.IsNullOrWhiteSpace(info.Text))
+        // The text is its own target, so it is deliberately absent from the info. Carrying it in both
+        // wrote the slide text to two snapshot files.
+        if (!string.IsNullOrWhiteSpace(text))
         {
-            targets.Add(new("txt", info.Text!));
+            targets.Add(new("txt", text!));
         }
 
         return new(info, targets);
     }
 
-    internal static PowerpointInfo GetPowerpointInfo(PresentationDocument document)
+    internal static PowerpointInfo GetPowerpointInfo(PresentationDocument document) =>
+        new()
+        {
+            Properties = GetPowerpointProperties(document),
+            SlideCount = document.PresentationPart?.SlideParts.Count() ?? 0
+        };
+
+    internal static string? GetPowerpointText(PresentationDocument document)
     {
         var presentationPart = document.PresentationPart;
-        var builder = new StringBuilder();
-        var slideCount = 0;
-
-        if (presentationPart?.SlideParts != null)
+        if (presentationPart == null)
         {
-            foreach (var slidePart in presentationPart.SlideParts)
-            {
-                slideCount++;
-                var before = builder.Length;
-                if (before > 0)
-                {
-                    builder.Append("\n---\n");
-                }
+            return null;
+        }
 
-                if (!AppendSlideText(builder, slidePart))
-                {
-                    builder.Length = before;
-                }
+        var builder = new StringBuilder();
+        foreach (var slidePart in presentationPart.SlideParts)
+        {
+            var before = builder.Length;
+            if (before > 0)
+            {
+                builder.Append("\n---\n");
+            }
+
+            if (!AppendSlideText(builder, slidePart))
+            {
+                builder.Length = before;
             }
         }
 
-        return new()
-        {
-            Properties = GetPowerpointProperties(document),
-            SlideCount = slideCount,
-            Text = builder.Length > 0 ? builder.ToString() : null
-        };
+        return builder.Length > 0 ? builder.ToString() : null;
     }
 
     internal static Dictionary<string, object?>? GetPowerpointProperties(PresentationDocument document) =>
@@ -112,5 +116,4 @@ class PowerpointInfo
 {
     public Dictionary<string, object?>? Properties { get; init; }
     public required int SlideCount { get; init; }
-    public string? Text { get; init; }
 }

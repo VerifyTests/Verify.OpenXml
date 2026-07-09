@@ -69,6 +69,77 @@ public class WordUnitTests
     }
 
     [Test]
+    public void GetWordDocumentText_PreservesDocumentOrder()
+    {
+        var row = new DocumentFormat.OpenXml.Wordprocessing.TableRow(
+            new DocumentFormat.OpenXml.Wordprocessing.TableCell(MakeParagraph("cell")));
+        var body = new Body(
+            MakeParagraph("before"),
+            new Table(row),
+            MakeParagraph("after"));
+        using var doc = CreateDoc(body);
+
+        var text = VerifyOpenXml.GetWordDocumentText(doc)!;
+        var lines = text.Split('\n').Select(_ => _.Trim()).Where(_ => _.Length > 0).ToList();
+        Assert.That(lines, Is.EqualTo(new[] { "before", "cell", "after" }));
+    }
+
+    [Test]
+    public void GetWordDocumentText_InlineContentControl()
+    {
+        var sdt = new DocumentFormat.OpenXml.Wordprocessing.SdtRun(
+            new DocumentFormat.OpenXml.Wordprocessing.SdtContentRun(
+                new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText("controlled"))));
+        var paragraph = new Paragraph(
+            new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText("before ")),
+            sdt);
+        using var doc = CreateDoc(new(paragraph));
+
+        Assert.That(VerifyOpenXml.GetWordDocumentText(doc)!.TrimEnd(), Is.EqualTo("before controlled"));
+    }
+
+    [Test]
+    public void GetWordDocumentText_BlockContentControl()
+    {
+        var sdt = new DocumentFormat.OpenXml.Wordprocessing.SdtBlock(
+            new DocumentFormat.OpenXml.Wordprocessing.SdtContentBlock(MakeParagraph("inside")));
+        using var doc = CreateDoc(new(sdt));
+
+        Assert.That(VerifyOpenXml.GetWordDocumentText(doc)!.TrimEnd(), Is.EqualTo("inside"));
+    }
+
+    [Test]
+    public void GetWordDocumentText_ContentControlInTableCell()
+    {
+        var sdt = new DocumentFormat.OpenXml.Wordprocessing.SdtBlock(
+            new DocumentFormat.OpenXml.Wordprocessing.SdtContentBlock(MakeParagraph("value")));
+        var row = new DocumentFormat.OpenXml.Wordprocessing.TableRow(
+            new DocumentFormat.OpenXml.Wordprocessing.TableCell(MakeParagraph("label")),
+            new DocumentFormat.OpenXml.Wordprocessing.TableCell(sdt));
+        using var doc = CreateDoc(new(new Table(row)));
+
+        Assert.That(VerifyOpenXml.GetWordDocumentText(doc)!.TrimEnd(), Is.EqualTo("label\tvalue"));
+    }
+
+    [Test]
+    public void AppendWordParagraphText_Hyperlink()
+    {
+        var hyperlink = new DocumentFormat.OpenXml.Wordprocessing.Hyperlink(
+            new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText("linked")));
+        Assert.That(Render(new(hyperlink)), Is.EqualTo("linked"));
+    }
+
+    [Test]
+    public void AppendWordParagraphText_InterleavedTextAndTab()
+    {
+        var run = new DocumentFormat.OpenXml.Wordprocessing.Run(
+            new WordText("a"),
+            new TabChar(),
+            new WordText("b"));
+        Assert.That(Render(new(run)), Is.EqualTo("a\tb"));
+    }
+
+    [Test]
     public void GetWordDocumentText_WithTable()
     {
         var row1 = new DocumentFormat.OpenXml.Wordprocessing.TableRow(
