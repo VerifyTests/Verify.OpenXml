@@ -38,6 +38,6 @@ public static partial class VerifyOpenXml
         var stream = new MemoryStream();
         package.Clone(stream);
         stream.Position = 0;
-        return new(null, [new Target(extension, stream)]);
+        return new(null, [new(extension, stream)]);
     }
 }
