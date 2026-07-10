@@ -1,4 +1,1 @@
-﻿{
-  SlideCount: 1,
-  Text: Hello, PowerPoint!
-}
+﻿Hello, PowerPoint!

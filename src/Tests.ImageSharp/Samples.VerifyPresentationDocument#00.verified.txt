@@ -2,6 +2,5 @@
   Properties: {
     Title: Sample Presentation
   },
-  SlideCount: 1,
-  Text: Hello, PowerPoint!
+  SlideCount: 1
 }
