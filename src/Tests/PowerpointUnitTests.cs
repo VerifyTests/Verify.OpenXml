@@ -40,7 +40,7 @@ public class PowerpointUnitTests
         using var doc = CreateEmptyDoc();
         var info = VerifyOpenXml.GetPowerpointInfo(doc);
         Assert.That(info.SlideCount, Is.EqualTo(0));
-        Assert.That(info.Text, Is.Null);
+        Assert.That(VerifyOpenXml.GetPowerpointText(doc), Is.Null);
     }
 
     [Test]
@@ -53,9 +53,11 @@ public class PowerpointUnitTests
 
         var info = VerifyOpenXml.GetPowerpointInfo(doc);
         Assert.That(info.SlideCount, Is.EqualTo(2));
-        Assert.That(info.Text, Does.Contain("First"));
-        Assert.That(info.Text, Does.Contain("Second"));
-        Assert.That(info.Text, Does.Contain("---"));
+
+        var text = VerifyOpenXml.GetPowerpointText(doc);
+        Assert.That(text, Does.Contain("First"));
+        Assert.That(text, Does.Contain("Second"));
+        Assert.That(text, Does.Contain("---"));
     }
 
     [Test]
@@ -67,7 +69,7 @@ public class PowerpointUnitTests
 
         var info = VerifyOpenXml.GetPowerpointInfo(doc);
         Assert.That(info.SlideCount, Is.EqualTo(1));
-        Assert.That(info.Text, Is.Null);
+        Assert.That(VerifyOpenXml.GetPowerpointText(doc), Is.Null);
     }
 
     [Test]
