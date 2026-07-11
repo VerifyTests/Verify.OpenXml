@@ -53,19 +53,22 @@ public static partial class VerifyOpenXml
             Protection = BuildWorkbookProtectionInfo(workbookPart)
         };
 
-        // Create deterministic XLSX output
-        using var sourceStream = new MemoryStream();
-        document.Clone(sourceStream);
-        sourceStream.Position = 0;
-        var resultStream = DeterministicPackage.Convert(sourceStream);
+        List<Target> targets = [];
+        // Building the deterministic xlsx is expensive, so skip it when the xlsx target is excluded.
+        // The csv sheets and info are extracted from the document, so they are unaffected.
+        if (!settings.IsTargetExcluded("xlsx"))
+        {
+            using var sourceStream = new MemoryStream();
+            document.Clone(sourceStream);
+            sourceStream.Position = 0;
+            var resultStream = DeterministicPackage.Convert(sourceStream);
+            targets.Add(
+                new("xlsx", resultStream)
+                {
+                    BypassComparersForSubsequentOnDifference = true
+                });
+        }
 
-        List<Target> targets =
-        [
-            new("xlsx", resultStream)
-            {
-                BypassComparersForSubsequentOnDifference = true
-            }
-        ];
         if (sheets.Count == 1)
         {
             var (csv, _) = sheets[0];

@@ -1,0 +1,65 @@
+﻿{
+  Sheets: [
+    {
+      Name: Sheet1,
+      Columns: [
+        {
+          Name: 0,
+          Width: 11.4,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        },
+        {
+          Name: First Name,
+          Width: 11.4,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        },
+        {
+          Name: Last Name,
+          Width: 11.4,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        },
+        {
+          Name: Gender,
+          Width: 11.4,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        },
+        {
+          Name: Country,
+          Width: 11.4,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        },
+        {
+          Name: Date,
+          Width: 11.4,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        },
+        {
+          Name: Age,
+          Width: 11.4,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        },
+        {
+          Name: Id,
+          Width: 11.4,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        },
+        {
+          Name: Formula,
+          Width: 11.4,
+          ContainsRichText: false,
+          RequiredHighlight: false
+        }
+      ]
+    }
+  ],
+  WorksheetCount: 1,
+  Title: The Title
+}

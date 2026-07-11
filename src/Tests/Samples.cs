@@ -84,6 +84,34 @@ public class Samples
 
     #endregion
 
+    #region ExcludeExcel
+
+    // Skips the .verified.xlsx (and building it), keeping the info and csv sheets.
+    [Test]
+    public Task ExcludeExcel() =>
+        VerifyFile("sample.xlsx")
+            .ExcludeTargets("xlsx");
+
+    #endregion
+
+    #region ExcludeWord
+
+    [Test]
+    public Task ExcludeWord() =>
+        VerifyFile("sample.docx")
+            .ExcludeTargets("docx");
+
+    #endregion
+
+    #region ExcludePowerpoint
+
+    [Test]
+    public Task ExcludePowerpoint() =>
+        VerifyFile("sample.pptx")
+            .ExcludeTargets("pptx");
+
+    #endregion
+
     #region PresentationDocument
 
     [Test]
