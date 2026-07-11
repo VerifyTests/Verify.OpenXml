@@ -27,19 +27,22 @@ public static partial class VerifyOpenXml
         var info = GetWordInfo(document);
         var text = GetWordDocumentText(document);
 
-        // Create deterministic DOCX output
         using var sourceStream = new MemoryStream();
         document.Clone(sourceStream);
         sourceStream.Position = 0;
-        var resultStream = DeterministicPackage.Convert(sourceStream);
 
-        List<Target> targets =
-        [
-            new("docx", resultStream)
-            {
-                BypassComparersForSubsequentOnDifference = true
-            }
-        ];
+        List<Target> targets = [];
+        // Building the deterministic docx is expensive, so skip it when the docx target is excluded.
+        Stream? deterministic = null;
+        if (!settings.IsTargetExcluded("docx"))
+        {
+            deterministic = DeterministicPackage.Convert(sourceStream);
+            targets.Add(
+                new("docx", deterministic)
+                {
+                    BypassComparersForSubsequentOnDifference = true
+                });
+        }
 
         // The text is its own target, so it is deliberately absent from the info. Carrying it in both
         // wrote the document text to two snapshot files.
@@ -49,7 +52,10 @@ public static partial class VerifyOpenXml
         }
 
 #if NET10_0_OR_GREATER
-        AddRenderedPages(resultStream, targets);
+        // Rendering needs a package stream. Reuse the deterministic docx when built; otherwise render
+        // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
+        // so the rendered pixels are the same either way).
+        AddRenderedPages(deterministic ?? sourceStream, targets);
 #endif
 
         return new(info, targets);

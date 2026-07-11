@@ -318,7 +318,7 @@ public Task VerifyPowerpointStream()
     return Verify(stream, "pptx");
 }
 ```
-<sup><a href='/src/Tests/Samples.cs#L99-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/Samples.cs#L127-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -335,5 +335,24 @@ public async Task VerifyPresentationDocument()
     await Verify(reader);
 }
 ```
-<sup><a href='/src/Tests/Samples.cs#L87-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/Samples.cs#L115-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+
+## Exclude the document
+
+The source document is included in the snapshot as a `.verified.xlsx`, `.verified.docx`, or `.verified.pptx`. Building the deterministic package is expensive, and committing it is not always wanted. [`ExcludeTargets`](https://github.com/VerifyTests/Verify/blob/main/docs/converter.md#excluding-targets) drops it from a verification and skips the build, while the info, text, csv, and rendered pages still verify:
+
+<!-- snippet: ExcludeExcel -->
+<a id='snippet-ExcludeExcel'></a>
+```cs
+// Skips the .verified.xlsx (and building it), keeping the info and csv sheets.
+[Test]
+public Task ExcludeExcel() =>
+    VerifyFile("sample.xlsx")
+        .ExcludeTargets("xlsx");
+```
+<sup><a href='/src/Tests/Samples.cs#L87-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcludeExcel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The same applies to `docx` and `pptx`. To exclude for every test, call `VerifierSettings.ExcludeTargets("xlsx")` at initialization.

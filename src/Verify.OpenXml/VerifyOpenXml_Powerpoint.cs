@@ -19,18 +19,21 @@ public static partial class VerifyOpenXml
         var info = GetPowerpointInfo(document);
         var text = GetPowerpointText(document);
 
-        using var sourceStream = new MemoryStream();
-        document.Clone(sourceStream);
-        sourceStream.Position = 0;
-        var resultStream = DeterministicPackage.Convert(sourceStream);
-
-        List<Target> targets =
-        [
-            new("pptx", resultStream)
-            {
-                BypassComparersForSubsequentOnDifference = true
-            }
-        ];
+        List<Target> targets = [];
+        // Building the deterministic pptx is expensive, so skip it when the pptx target is excluded.
+        // The text and info are extracted from the document, so they are unaffected.
+        if (!settings.IsTargetExcluded("pptx"))
+        {
+            using var sourceStream = new MemoryStream();
+            document.Clone(sourceStream);
+            sourceStream.Position = 0;
+            var resultStream = DeterministicPackage.Convert(sourceStream);
+            targets.Add(
+                new("pptx", resultStream)
+                {
+                    BypassComparersForSubsequentOnDifference = true
+                });
+        }
 
         // The text is its own target, so it is deliberately absent from the info. Carrying it in both
         // wrote the slide text to two snapshot files.
