@@ -9,7 +9,7 @@
     <PackageVersion Include="Morph" Version="1.1.7" />
     <PackageVersion Include="Morph.Skia" Version="1.1.7" />
     <PackageVersion Include="Morph.ImageSharp" Version="1.1.7" />
-    <PackageVersion Include="MarkdownSnippets.MsBuild" Version="28.4.1" />
+    <PackageVersion Include="MarkdownSnippets.MsBuild" Version="28.4.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageVersion Include="NUnit" Version="4.6.1" />
     <PackageVersion Include="NUnit3TestAdapter" Version="6.2.0" />
