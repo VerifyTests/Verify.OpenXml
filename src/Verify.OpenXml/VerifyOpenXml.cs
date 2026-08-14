@@ -24,6 +24,18 @@ public static partial class VerifyOpenXml
     }
 
     /// <summary>
+    /// Whether rendering will produce PNG targets. Always false below <c>net10.0</c>, where the Morph
+    /// integration is compiled out. Cloning the source package is only worth it for the deterministic
+    /// binary target or for rendering, so each converter checks this before cloning.
+    /// </summary>
+    static bool RenderingEnabled =>
+#if NET10_0_OR_GREATER
+        MorphRenderer.Enabled;
+#else
+        false;
+#endif
+
+    /// <summary>
     /// Verify runs the stream converter registered for <paramref name="extension" /> over the target returned
     /// here, and that converter is what produces the info, the text and the rendered pages. So a file converter
     /// only has to hand over the package: building the other targets here too wrote every snapshot twice.

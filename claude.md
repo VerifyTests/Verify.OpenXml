@@ -43,6 +43,7 @@ Key files:
 - **VerifyOpenXml_Excel.cs** — Excel conversion (stream→CSV, metadata extraction, deterministic binary output)
 - **VerifyOpenXml_Word.cs** — Word conversion (text/font/property extraction, deterministic binary output)
 - **VerifyOpenXml_Powerpoint.cs** — Powerpoint conversion
+- **MorphRenderer.cs** — Backend probing and the shared PNG page targets (`net10.0` only)
 - **Info.cs / WordInfo.cs** — Data models for extracted document metadata
 
 Each stream converter returns a `ConversionResult` containing:
@@ -50,6 +51,10 @@ Each stream converter returns a `ConversionResult` containing:
 2. Text targets (CSV for Excel sheets, TXT for Word/Powerpoint text)
 3. A deterministic binary copy of the original document (via `DeterministicIoPackaging`)
 4. On `net10.0` with a Morph backend present, one PNG per rendered page
+
+All three document types render. Morph exposes a separate converter per type (`DocumentConverter`, `ExcelConverter`, `PowerPointConverter`) with no common base, so `MorphRenderer` captures each one's `ConvertToImageData` as a delegate and shares a single `AddPages`. Rendering reads the deterministic package when one was built and the raw clone otherwise — `DeterministicPackage` only normalizes zip container metadata, so the pixels are the same either way. This is why each converter clones unconditionally rather than only inside the `IsTargetExcluded` branch.
+
+A page is not a sheet or a slide by definition: Word paginates by layout, Powerpoint emits one page per slide, and Excel paginates by *print* layout — a long sheet spills onto several pages, and each visible sheet starts a new one.
 
 Document text is a target only — never also a property on the info object, or it lands in two snapshot files.
 
@@ -62,6 +67,14 @@ The deterministic binary output is critical — `DeterministicIoPackaging` ensur
 - **ModuleInitializer.cs** — Calls `VerifyOpenXml.Initialize()` via `[ModuleInitializer]`
 - **Samples.cs** — Core tests verifying Excel/Word files, streams, and document objects
 - Verified snapshot files (`.verified.txt`, `.verified.csv`, `.verified.xlsx`, `.verified.docx`) live alongside tests
+
+`sample.pptx` is hand-built rather than authored in PowerPoint, and two things about it are load-bearing:
+
+- The title placeholder carries an explicit `<a:xfrm>`. Its layout and master are stubs with no placeholder geometry, so without it Morph has nothing to position the text with and renders a blank slide — the text targets still pass, so the blank PNG is easy to accept by mistake.
+- `ppt/slideLayouts/_rels/slideLayout1.xml.rels` exists. A slideLayout part must relate to its slideMaster; without it PowerPoint offers to repair both the sample and every `.verified.pptx` derived from it.
+- The master's `<p:bgRef idx="1001">` names `bg1`, not `phClr`. `phClr` is the placeholder the theme's `bgFillStyleLst` substitutes *into*, so supplying it as the substitution colour is circular and PowerPoint renders the slide solid black.
+
+Nothing in the test suite notices any of this — the OpenXML SDK, DeterministicIoPackaging and Morph all read the deck fine, and Morph renders the background white either way. Only opening a `.verified.pptx` in PowerPoint surfaces it.
 
 When tests fail, Verify produces `.received.*` files showing actual output. Compare these against `.verified.*` files. To accept new output, replace the verified file with the received file.
 

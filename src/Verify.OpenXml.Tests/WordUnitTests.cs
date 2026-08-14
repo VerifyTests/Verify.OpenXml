@@ -81,7 +81,7 @@ public class WordUnitTests
 
         var text = VerifyOpenXml.GetWordDocumentText(doc)!;
         var lines = text.Split('\n').Select(_ => _.Trim()).Where(_ => _.Length > 0).ToList();
-        Assert.That(lines, Is.EqualTo(new[] { "before", "cell", "after" }));
+        Assert.That(lines, Is.EqualTo(["before", "cell", "after"]));
     }
 
     [Test]

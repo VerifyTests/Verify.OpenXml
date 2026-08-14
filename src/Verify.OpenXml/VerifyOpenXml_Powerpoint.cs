@@ -19,17 +19,27 @@ public static partial class VerifyOpenXml
         var info = GetPowerpointInfo(document);
         var text = GetPowerpointText(document);
 
-        List<Target> targets = [];
         // Building the deterministic pptx is expensive, so skip it when the pptx target is excluded.
         // The text and info are extracted from the document, so they are unaffected.
-        if (!settings.IsTargetExcluded("pptx"))
+        var buildDeterministic = !settings.IsTargetExcluded("pptx");
+
+        using var sourceStream = new MemoryStream();
+        if (buildDeterministic ||
+            RenderingEnabled)
         {
-            using var sourceStream = new MemoryStream();
             document.Clone(sourceStream);
             sourceStream.Position = 0;
-            var resultStream = DeterministicPackage.Convert(sourceStream);
+        }
+
+        List<Target> targets = [];
+        // ReSharper disable once TooWideLocalVariableScope
+        // ReSharper disable once RedundantAssignment
+        Stream? deterministic = null;
+        if (buildDeterministic)
+        {
+            deterministic = DeterministicPackage.Convert(sourceStream);
             targets.Add(
-                new("pptx", resultStream)
+                new("pptx", deterministic)
                 {
                     BypassComparersForSubsequentOnDifference = true
                 });
@@ -41,6 +51,13 @@ public static partial class VerifyOpenXml
         {
             targets.Add(new("txt", text!));
         }
+
+#if NET10_0_OR_GREATER
+        // Rendering needs a package stream. Reuse the deterministic pptx when built; otherwise render
+        // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
+        // so the rendered pixels are the same either way).
+        MorphRenderer.AddPowerpointPages(deterministic ?? sourceStream, targets);
+#endif
 
         return new(info, targets);
     }

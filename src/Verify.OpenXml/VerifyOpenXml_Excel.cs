@@ -53,17 +53,27 @@ public static partial class VerifyOpenXml
             Protection = BuildWorkbookProtectionInfo(workbookPart)
         };
 
-        List<Target> targets = [];
         // Building the deterministic xlsx is expensive, so skip it when the xlsx target is excluded.
         // The csv sheets and info are extracted from the document, so they are unaffected.
-        if (!settings.IsTargetExcluded("xlsx"))
+        var buildDeterministic = !settings.IsTargetExcluded("xlsx");
+
+        using var sourceStream = new MemoryStream();
+        if (buildDeterministic ||
+            RenderingEnabled)
         {
-            using var sourceStream = new MemoryStream();
             document.Clone(sourceStream);
             sourceStream.Position = 0;
-            var resultStream = DeterministicPackage.Convert(sourceStream);
+        }
+
+        List<Target> targets = [];
+        // ReSharper disable once TooWideLocalVariableScope
+        // ReSharper disable once RedundantAssignment
+        Stream? deterministic = null;
+        if (buildDeterministic)
+        {
+            deterministic = DeterministicPackage.Convert(sourceStream);
             targets.Add(
-                new("xlsx", resultStream)
+                new("xlsx", deterministic)
                 {
                     BypassComparersForSubsequentOnDifference = true
                 });
@@ -78,6 +88,13 @@ public static partial class VerifyOpenXml
         {
             targets.AddRange(sheets.Select(_ => new Target("csv", _.Csv, _.Name)));
         }
+
+#if NET10_0_OR_GREATER
+        // Rendering needs a package stream. Reuse the deterministic xlsx when built; otherwise render
+        // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
+        // so the rendered pixels are the same either way).
+        MorphRenderer.AddExcelPages(deterministic ?? sourceStream, targets);
+#endif
 
         return new(info, targets);
     }

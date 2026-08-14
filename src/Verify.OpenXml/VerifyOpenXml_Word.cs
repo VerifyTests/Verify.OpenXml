@@ -27,14 +27,22 @@ public static partial class VerifyOpenXml
         var info = GetWordInfo(document);
         var text = GetWordDocumentText(document);
 
+        // Building the deterministic docx is expensive, so skip it when the docx target is excluded.
+        var buildDeterministic = !settings.IsTargetExcluded("docx");
+
         using var sourceStream = new MemoryStream();
-        document.Clone(sourceStream);
-        sourceStream.Position = 0;
+        if (buildDeterministic ||
+            RenderingEnabled)
+        {
+            document.Clone(sourceStream);
+            sourceStream.Position = 0;
+        }
 
         List<Target> targets = [];
-        // Building the deterministic docx is expensive, so skip it when the docx target is excluded.
+        // ReSharper disable once TooWideLocalVariableScope
+        // ReSharper disable once RedundantAssignment
         Stream? deterministic = null;
-        if (!settings.IsTargetExcluded("docx"))
+        if (buildDeterministic)
         {
             deterministic = DeterministicPackage.Convert(sourceStream);
             targets.Add(
@@ -55,39 +63,11 @@ public static partial class VerifyOpenXml
         // Rendering needs a package stream. Reuse the deterministic docx when built; otherwise render
         // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
         // so the rendered pixels are the same either way).
-        AddRenderedPages(deterministic ?? sourceStream, targets);
+        MorphRenderer.AddWordPages(deterministic ?? sourceStream, targets);
 #endif
 
         return new(info, targets);
     }
-
-#if NET10_0_OR_GREATER
-    static void AddRenderedPages(Stream docxStream, List<Target> targets)
-    {
-        var renderer = MorphRenderer.Instance;
-        if (renderer == null)
-        {
-            return;
-        }
-
-        docxStream.Position = 0;
-        using var copy = new MemoryStream();
-        docxStream.CopyTo(copy);
-        docxStream.Position = 0;
-        copy.Position = 0;
-
-        var pages = renderer.ConvertToImageData(
-            copy,
-            new()
-            {
-                DeterministicRendering = true
-            });
-        foreach (var page in pages)
-        {
-            targets.Add(new("png", new MemoryStream(page)));
-        }
-    }
-#endif
 
     /// <summary>
     /// Document metadata, or null when the document carries none — so no empty info snapshot is written.

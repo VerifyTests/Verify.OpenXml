@@ -20,6 +20,7 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
  * Captures custom document properties
  * Supports date scrubbing and GUID scrubbing for deterministic tests
  * Generates deterministic XLSX output using DeterministicIoPackaging
+ * Optionally renders each page to PNG via [Morph](https://github.com/SimonCropp/Morph) (opt-in)
 
 
 ### Word (docx)
@@ -38,6 +39,7 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
  * Captures document properties (title, subject, keywords, description, category, status, revision)
  * Reports slide count
  * Generates deterministic PPTX output using DeterministicIoPackaging
+ * Optionally renders each slide to PNG via [Morph](https://github.com/SimonCropp/Morph) (opt-in)
 
 **See [Milestones](../../milestones?state=closed) for release notes.**
 
@@ -73,7 +75,7 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
 public static void Initialize() =>
     VerifyOpenXml.Initialize();
 ```
-<sup><a href='/src/Tests/ModuleInitializer.cs#L3-L9' title='Snippet source file'>snippet source</a> | <a href='#snippet-enable' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/ModuleInitializer.cs#L3-L9' title='Snippet source file'>snippet source</a> | <a href='#snippet-enable' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -89,7 +91,7 @@ public static void Initialize() =>
 public Task VerifyExcel() =>
     VerifyFile("sample.xlsx");
 ```
-<sup><a href='/src/Tests/Samples.cs#L4-L10' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L4-L10' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -105,7 +107,7 @@ public Task VerifyExcelStream()
     return Verify(stream, "xlsx");
 }
 ```
-<sup><a href='/src/Tests/Samples.cs#L37-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcelStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L37-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcelStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -122,7 +124,7 @@ public async Task VerifySpreadsheetDocument()
     await Verify(reader);
 }
 ```
-<sup><a href='/src/Tests/Samples.cs#L25-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-SpreadsheetDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L25-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-SpreadsheetDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -139,7 +141,7 @@ public async Task VerifySpreadsheetDocument()
 5,Nereida,Magwood,Female,United States,2016-08-16,58,2468,2526
 6,Gaston,Brumm,Male,United States,2015-05-21,24,2554,2578
 ```
-<sup><a href='/src/Tests/Samples.VerifyExcel.verified.csv#L1-L7' title='Snippet source file'>snippet source</a> | <a href='#snippet-Samples.VerifyExcel.verified.csv' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.VerifyExcel.verified.csv#L1-L7' title='Snippet source file'>snippet source</a> | <a href='#snippet-Samples.VerifyExcel.verified.csv' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -155,7 +157,7 @@ public async Task VerifySpreadsheetDocument()
 public Task VerifyWord() =>
     VerifyFile("sample.docx");
 ```
-<sup><a href='/src/Tests/Samples.cs#L48-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWord' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L48-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWord' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -171,7 +173,7 @@ public Task VerifyWordStream()
     return Verify(stream, "docx");
 }
 ```
-<sup><a href='/src/Tests/Samples.cs#L68-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWordStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L68-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWordStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -200,57 +202,125 @@ public async Task VerifyWordprocessingDocument()
     await Verify(reader);
 }
 ```
-<sup><a href='/src/Tests/Samples.cs#L56-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L56-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
-#### Render pages to PNG (opt-in)
+### PowerPoint
 
-Verify.OpenXml can additionally snapshot a rendered PNG of every page of a `.docx` using the [Morph](https://github.com/SimonCropp/Morph) renderer. This catches visual regressions (layout, fonts, images, tables) that the text-based snapshot would miss.
 
-##### Enabling rendering
+#### Verify a file
 
-The base [`Morph.OpenXml`](https://nuget.org/packages/Morph.OpenXml) package is referenced automatically by Verify.OpenXml on `net10.0`. To turn on rendering, add **exactly one** backend package to the test project:
+<!-- snippet: VerifyPowerpoint -->
+<a id='snippet-VerifyPowerpoint'></a>
+```cs
+[Test]
+public Task VerifyPowerpoint() =>
+    VerifyFile("sample.pptx");
+```
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L79-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpoint' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
-[`Morph.OpenXml.Skia`](https://nuget.org/packages/Morph.OpenXml.Skia) — uses [SkiaSharp](https://github.com/mono/SkiaSharp):
+
+#### Verify a Stream
+
+<!-- snippet: VerifyPowerpointStream -->
+<a id='snippet-VerifyPowerpointStream'></a>
+```cs
+[Test]
+public Task VerifyPowerpointStream()
+{
+    var stream = new MemoryStream(File.ReadAllBytes("sample.pptx"));
+    return Verify(stream, "pptx");
+}
+```
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L127-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+#### Verify a PresentationDocument
+
+<!-- snippet: PresentationDocument -->
+<a id='snippet-PresentationDocument'></a>
+```cs
+[Test]
+public async Task VerifyPresentationDocument()
+{
+    await using var stream = File.OpenRead("sample.pptx");
+    using var reader = PresentationDocument.Open(stream, false);
+    await Verify(reader);
+}
+```
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L115-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+## Render pages to PNG (opt-in)
+
+Verify.OpenXml can additionally snapshot a rendered PNG of every page of a `.docx`, `.xlsx`, or `.pptx` using the [Morph](https://github.com/SimonCropp/Morph) renderer. This catches visual regressions (layout, fonts, images, tables) that the text-based snapshot would miss.
+
+
+### Enabling rendering
+
+The base [`Morph`](https://nuget.org/packages/Morph) package is referenced automatically by Verify.OpenXml on `net10.0`. To turn on rendering, add **exactly one** backend package to the test project:
+
+[`Morph.Skia`](https://nuget.org/packages/Morph.Skia) — uses [SkiaSharp](https://github.com/mono/SkiaSharp):
 
 ```xml
-<PackageReference Include="Morph.OpenXml.Skia" />
+<PackageReference Include="Morph.Skia" />
 ```
 
-or [`Morph.OpenXml.ImageSharp`](https://nuget.org/packages/Morph.OpenXml.ImageSharp) — uses [ImageSharp](https://github.com/SixLabors/ImageSharp), fully managed:
+or [`Morph.ImageSharp`](https://nuget.org/packages/Morph.ImageSharp) — uses [ImageSharp](https://github.com/SixLabors/ImageSharp), fully managed:
 
 ```xml
-<PackageReference Include="Morph.OpenXml.ImageSharp" />
+<PackageReference Include="Morph.ImageSharp" />
 ```
 
 The backend is detected at runtime by probing for the assembly. No code changes are needed in `ModuleInitializer.cs` — the existing `VerifyOpenXml.Initialize()` call picks it up automatically.
 
-##### Output
 
-When a backend is present, every Word verification (file, stream, or `WordprocessingDocument`) produces additional PNG targets — one per page — alongside the existing `.verified.docx` and `.verified.txt` files. For example, a two-page `VerifyWord` test produces:
+### Output
+
+When a backend is present, every verification (file, stream, or document object) produces additional PNG targets — one per rendered page — alongside the existing binary and text targets. What counts as a page differs per document type:
+
+ * **Word** — one page per laid-out page of the document.
+ * **PowerPoint** — one page per slide, in `p:sldIdLst` order.
+ * **Excel** — pages come from the print layout rather than the sheet: a long sheet paginates downward, and each visible sheet starts a new page with its own paper size and orientation.
+
+A single rendered page is written without an index:
 
 ```
 Samples.VerifyWord.verified.docx
 Samples.VerifyWord#00.verified.txt
 Samples.VerifyWord#01.verified.txt
-Samples.VerifyWord#page01.verified.png
-Samples.VerifyWord#page02.verified.png
+Samples.VerifyWord.verified.png
 ```
 
-Pages are zero-padded to two digits (`page01`, `page02`, ...) so file ordering matches page order.
+Multiple pages are indexed in page order. For example a two-sheet workbook:
 
-##### Backend selection rules
+```
+Samples.MultipleSheets.verified.xlsx
+Samples.MultipleSheets.verified.txt
+Samples.MultipleSheets#Sheet1.verified.csv
+Samples.MultipleSheets#Sheet2.verified.csv
+Samples.MultipleSheets#00.verified.png
+Samples.MultipleSheets#01.verified.png
+```
+
+
+### Backend selection rules
 
  * **Neither backend referenced** — rendering is silently skipped. The text and binary targets are still produced. This is the default for consumers who do not opt in.
- * **One backend referenced** — that backend is used for all Word verifications.
- * **Both backends referenced** — an exception is thrown on the first Word verification with a clear message. Pick one.
+ * **One backend referenced** — that backend is used for all verifications.
+ * **Both backends referenced** — an exception is thrown on the first verification with a clear message. Pick one.
 
-##### Target framework support
 
-Rendering is only available on `net10.0` because Morph targets `net10.0` only. On `net472`, `net48`, `net8.0`, and `net9.0`, Word verification continues to produce only the existing text and binary targets — the rendering code is conditionally compiled out.
+### Target framework support
 
-##### Cross-platform PNG stability
+Rendering is only available on `net10.0` because Morph targets `net10.0` only. On `net472`, `net48`, `net8.0`, and `net9.0`, verification continues to produce only the existing text and binary targets — the rendering code is conditionally compiled out.
+
+
+### Cross-platform PNG stability
 
 PNG output from Skia and ImageSharp depends on installed fonts and platform-specific rasterization. A `.verified.png` generated on one machine may not be byte-identical on another OS or with different fonts installed. Recommendations:
 
@@ -267,7 +337,7 @@ await Verify(stream, "docx")
 See [Verify Naming docs](https://github.com/VerifyTests/Verify/blob/main/docs/naming.md) for the full list of `UniqueFor*` modifiers.
 
 
-##### Sharing one test suite across both backends
+### Sharing one test suite across both backends
 
 For a worked example of running the same test suite against both backends side-by-side, see the [`Tests.Skia`](/src/Tests.Skia) and [`Tests.ImageSharp`](/src/Tests.ImageSharp) projects in this repository. Both projects link the source files from [`Tests`](/src/Tests) and use `DerivePathInfo` in their `ModuleInitializer` to redirect snapshots into the per-backend project directory:
 
@@ -290,55 +360,6 @@ static string ProjectDir([CallerFilePath] string here = "") =>
 This pattern lets a single set of tests produce two parallel sets of `.verified.*` snapshots — one per rendering backend.
 
 
-### PowerPoint
-
-
-#### Verify a file
-
-<!-- snippet: VerifyPowerpoint -->
-<a id='snippet-VerifyPowerpoint'></a>
-```cs
-[Test]
-public Task VerifyPowerpoint() =>
-    VerifyFile("sample.pptx");
-```
-<sup><a href='/src/Tests/Samples.cs#L79-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpoint' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-
-#### Verify a Stream
-
-<!-- snippet: VerifyPowerpointStream -->
-<a id='snippet-VerifyPowerpointStream'></a>
-```cs
-[Test]
-public Task VerifyPowerpointStream()
-{
-    var stream = new MemoryStream(File.ReadAllBytes("sample.pptx"));
-    return Verify(stream, "pptx");
-}
-```
-<sup><a href='/src/Tests/Samples.cs#L127-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-
-#### Verify a PresentationDocument
-
-<!-- snippet: PresentationDocument -->
-<a id='snippet-PresentationDocument'></a>
-```cs
-[Test]
-public async Task VerifyPresentationDocument()
-{
-    await using var stream = File.OpenRead("sample.pptx");
-    using var reader = PresentationDocument.Open(stream, false);
-    await Verify(reader);
-}
-```
-<sup><a href='/src/Tests/Samples.cs#L115-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-
 ## Exclude the document
 
 The source document is included in the snapshot as a `.verified.xlsx`, `.verified.docx`, or `.verified.pptx`. Building the deterministic package is expensive, and committing it is not always wanted. [`ExcludeTargets`](https://github.com/VerifyTests/Verify/blob/main/docs/converter.md#excluding-targets) drops it from a verification and skips the build, while the info, text, csv, and rendered pages still verify:
@@ -352,7 +373,7 @@ public Task ExcludeExcel() =>
     VerifyFile("sample.xlsx")
         .ExcludeTargets("xlsx");
 ```
-<sup><a href='/src/Tests/Samples.cs#L87-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcludeExcel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L87-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcludeExcel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The same applies to `docx` and `pptx`. To exclude for every test, call `VerifierSettings.ExcludeTargets("xlsx")` at initialization.
