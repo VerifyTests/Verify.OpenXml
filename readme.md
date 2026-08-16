@@ -6,8 +6,6 @@
 
 Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of Word, Excel, and PowerPoint documents via [OpenXML](https://github.com/dotnet/Open-XML-SDK/).<!-- singleLineInclude: intro. path: /docs/intro.include.md -->
 
-Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
-
 
 ## Features
 
@@ -40,6 +38,7 @@ Supports Excel (xlsx), Word (docx), and PowerPoint (pptx) documents.
  * Reports slide count
  * Generates deterministic PPTX output using DeterministicIoPackaging
  * Optionally renders each slide to PNG via [Morph](https://github.com/SimonCropp/Morph) (opt-in)
+
 
 **See [Milestones](../../milestones?state=closed) for release notes.**
 
