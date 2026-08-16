@@ -132,8 +132,8 @@ public class PowerpointUnitTests
     static SlidePart AddSlide(PresentationPart presPart, params string[] lines)
     {
         var slidePart = presPart.AddNewPart<SlidePart>();
-        var paragraphs = lines.Select(_ =>
-            (OpenXmlElement)new A.Paragraph(
+        var paragraphs = lines.Select(OpenXmlElement (_) =>
+            new A.Paragraph(
                 new A.Run(new A.RunProperties(), new A.Text(_)))).ToArray();
         slidePart.Slide = BuildSlide(paragraphs);
         return slidePart;

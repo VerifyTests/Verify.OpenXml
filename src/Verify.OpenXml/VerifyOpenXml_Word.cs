@@ -56,6 +56,7 @@ public static partial class VerifyOpenXml
         // wrote the document text to two snapshot files.
         if (!string.IsNullOrWhiteSpace(text))
         {
+            // ReSharper disable once RedundantSuppressNullableWarningExpression
             targets.Add(new("txt", text!));
         }
 

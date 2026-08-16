@@ -252,8 +252,8 @@ public class ExcelUnitTests
         sharedStringPart.SharedStringTable = new(
             new SharedStringItem(new Text("Plain")),
             new SharedStringItem(
-                new DocumentFormat.OpenXml.Spreadsheet.Run(new Text("Rich")),
-                new DocumentFormat.OpenXml.Spreadsheet.Run(new Text("Text"))));
+                new Run(new Text("Rich")),
+                new Run(new Text("Text"))));
 
         var wsPart = wbPart.AddNewPart<WorksheetPart>();
         var sheetData = new SheetData(
@@ -319,7 +319,7 @@ public class ExcelUnitTests
                 new Cell
                 {
                     DataType = CellValues.InlineString,
-                    InlineString = new(new DocumentFormat.OpenXml.Spreadsheet.Run(new Text("Styled"))),
+                    InlineString = new(new Run(new Text("Styled"))),
                     CellReference = "A2"
                 })
             {
@@ -344,7 +344,7 @@ public class ExcelUnitTests
                 new Cell
                 {
                     DataType = CellValues.InlineString,
-                    InlineString = new(new DocumentFormat.OpenXml.Spreadsheet.Run(new Text("HeaderRich"))),
+                    InlineString = new(new Run(new Text("HeaderRich"))),
                     CellReference = "A1"
                 })
             {
