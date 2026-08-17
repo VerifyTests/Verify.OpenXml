@@ -4,6 +4,21 @@ public static partial class VerifyOpenXml
 {
     public static bool Initialized { get; private set; }
 
+    /// <summary>
+    /// Directory holding the fonts to render pages with. When set, only fonts found here are used —
+    /// the machine's installed fonts are ignored entirely and a face the directory does not carry
+    /// throws rather than silently resolving to something else.
+    /// </summary>
+    /// <remarks>
+    /// Leaving this null renders with whatever the machine has installed, which is right for a
+    /// one-off render and wrong for a snapshot: the same document measures differently where a face
+    /// resolves differently, and in a spreadsheet that shifts column widths and so the wrapping. Set
+    /// it to a directory committed alongside the tests to make the rendered snapshots reproducible,
+    /// and to turn a fixture that reaches for an unavailable font into a failure at the point of the
+    /// mistake rather than a snapshot mismatch on someone else's machine.
+    /// </remarks>
+    public static string? FontDirectory { get; set; }
+
     public static void Initialize()
     {
         if (Initialized)

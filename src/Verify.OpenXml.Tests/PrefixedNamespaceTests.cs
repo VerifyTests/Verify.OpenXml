@@ -19,7 +19,15 @@ public class PrefixedNamespaceTests
         workbookPart.Workbook = new(new Sheets());
 
         var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-        worksheetPart.Worksheet = new(new SheetData());
+        worksheetPart.Worksheet = new(
+            new SheetData(),
+            // A4. A sheet stating no paper size takes the renderer's region default — Letter in
+            // North America, A4 elsewhere — so the rendered page snapshot would depend on where
+            // the test ran rather than on the workbook.
+            new PageSetup
+            {
+                PaperSize = 9
+            });
 
         var sheets = workbookPart.Workbook.GetFirstChild<Sheets>()!;
         sheets.Append(new Sheet

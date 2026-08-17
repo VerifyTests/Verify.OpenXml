@@ -49,6 +49,13 @@ public class ExcelBannerTests
                 })
             {
                 Count = 1
+            },
+            // A4. A sheet stating no paper size takes the renderer's region default — Letter in
+            // North America, A4 elsewhere — so the rendered page snapshot would depend on where
+            // the test ran rather than on the workbook.
+            new PageSetup
+            {
+                PaperSize = 9
             });
 
         // Metadata is keyed by the real column index (1/2/3); skipping the banner is what lets it
