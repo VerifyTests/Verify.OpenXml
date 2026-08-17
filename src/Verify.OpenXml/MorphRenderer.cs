@@ -89,7 +89,8 @@ static class MorphRenderer
             copy,
             new()
             {
-                DeterministicRendering = true
+                DeterministicRendering = true,
+                FontDirectory = VerifyOpenXml.FontDirectory
             });
         foreach (var page in pages)
         {
