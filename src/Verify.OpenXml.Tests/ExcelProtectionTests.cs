@@ -1,4 +1,4 @@
-﻿[TestFixture]
+[TestFixture]
 public class ExcelProtectionTests
 {
     [Test]
@@ -54,16 +54,7 @@ public class ExcelProtectionTests
             AutoFilter = false,
             PivotTables = true
         };
-        wsPart.Worksheet = new(
-            sheetData,
-            sheetProtection,
-            // A4. A sheet stating no paper size takes the renderer's region default — Letter in
-            // North America, A4 elsewhere — so the rendered page snapshot would depend on where
-            // the test ran rather than on the workbook.
-            new PageSetup
-            {
-                PaperSize = 9
-            });
+        wsPart.Worksheet = new(sheetData, sheetProtection);
 
         var sheets = wbPart.Workbook.GetFirstChild<Sheets>()!;
         sheets.Append(new Sheet

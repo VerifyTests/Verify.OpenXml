@@ -1,4 +1,4 @@
-﻿// Exercises the data-validation, conditional-formatting and column-level-style
+// Exercises the data-validation, conditional-formatting and column-level-style
 // metadata captured per ColumnInfo.
 [TestFixture]
 public class ExcelValidationTests
@@ -177,18 +177,7 @@ public class ExcelValidationTests
             Count = 3
         };
 
-        wsPart.Worksheet = new(
-            cols,
-            sheetData,
-            conditionalFormatting,
-            dataValidations,
-            // A4. A sheet stating no paper size takes the renderer's region default — Letter in
-            // North America, A4 elsewhere — so the rendered page snapshot would depend on where
-            // the test ran rather than on the workbook.
-            new PageSetup
-            {
-                PaperSize = 9
-            });
+        wsPart.Worksheet = new(cols, sheetData, conditionalFormatting, dataValidations);
 
         var sheets = wbPart.Workbook.GetFirstChild<Sheets>()!;
         sheets.Append(new Sheet
