@@ -8,11 +8,15 @@
 
     #endregion
 
-    // No rendering backend is referenced here, so this pins nothing today. It is set anyway so that
-    // referencing one later cannot quietly start rendering from the machine's fonts.
+    // No rendering backend is referenced here, so these pin nothing today. They are set anyway so
+    // that referencing one later cannot quietly start rendering from the machine's fonts, or on the
+    // machine's paper.
     [ModuleInitializer]
-    public static void InitializeFonts() =>
+    public static void InitializeRendering()
+    {
         VerifyOpenXml.FontDirectory = Path.Combine(ProjectDir(), "..", "Fonts");
+        VerifyOpenXml.UseLetterPageSize = false;
+    }
 
     [ModuleInitializer]
     public static void InitializeOther() =>

@@ -90,7 +90,8 @@ static class MorphRenderer
             new()
             {
                 DeterministicRendering = true,
-                FontDirectory = VerifyOpenXml.FontDirectory
+                FontDirectory = VerifyOpenXml.FontDirectory,
+                UseLetterPageSize = VerifyOpenXml.UseLetterPageSize
             });
         foreach (var page in pages)
         {

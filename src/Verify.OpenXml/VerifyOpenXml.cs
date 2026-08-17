@@ -19,6 +19,19 @@ public static partial class VerifyOpenXml
     /// </remarks>
     public static string? FontDirectory { get; set; }
 
+    /// <summary>
+    /// The paper to render on when the document states none — a worksheet with no
+    /// <c>pageSetup/@paperSize</c>, or a docx with no <c>w:pgSz</c>. <c>true</c> is US Letter,
+    /// <c>false</c> is A4. A document that does state its paper size is unaffected.
+    /// </summary>
+    /// <remarks>
+    /// Leaving this null takes the machine's region — Letter in North America, A4 elsewhere — which
+    /// is what Word and Excel do, and which makes the rendered page size depend on where the tests
+    /// run. A workbook stating no paper size is the common case rather than the rare one, so set
+    /// this for snapshots that have to survive a move between machines.
+    /// </remarks>
+    public static bool? UseLetterPageSize { get; set; }
+
     public static void Initialize()
     {
         if (Initialized)

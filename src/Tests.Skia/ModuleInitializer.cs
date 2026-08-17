@@ -11,6 +11,9 @@ public static class ModuleInitializer
         // the rendered pixels; pinning this also turns a fixture asking for a font the directory
         // does not carry into an outright failure rather than a snapshot mismatch elsewhere.
         VerifyOpenXml.FontDirectory = Path.Combine(projectDir, "..", "Fonts");
+        // A4 whatever the machine's region says. A sheet stating no paperSize otherwise renders
+        // Letter on a North American agent and A4 here, which reads as a rendering regression.
+        VerifyOpenXml.UseLetterPageSize = false;
         DerivePathInfo(
             (_, _, type, method) =>
                 new(directory: projectDir, typeName: type.Name, methodName: method.Name));
