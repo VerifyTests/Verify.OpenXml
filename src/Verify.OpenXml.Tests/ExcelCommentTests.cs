@@ -1,4 +1,4 @@
-// Exercises ColumnInfo.Note sourced from cell notes (legacy comments) on the header row.
+﻿// Exercises ColumnInfo.Note sourced from cell notes (legacy comments) on the header row.
 // Pairs the notes with a column-metadata custom XML part so the ApplyColumnMetadata
 // carry-through (which rebuilds each ColumnInfo) is covered too.
 [TestFixture]
@@ -26,7 +26,14 @@ public class ExcelCommentTests
                     Header("Salary"))
                 {
                     RowIndex = 1u
-                }));
+                }),
+            // A4. A sheet stating no paper size takes the renderer's region default — Letter in
+            // North America, A4 elsewhere — so the rendered page snapshot would depend on where
+            // the test ran rather than on the workbook.
+            new PageSetup
+            {
+                PaperSize = 9
+            });
 
         // Notes on the Id (A1) and Salary (C1) headers; Name (B1) has none.
         // A note on a data cell (B2) is ignored — the model only attributes header notes.

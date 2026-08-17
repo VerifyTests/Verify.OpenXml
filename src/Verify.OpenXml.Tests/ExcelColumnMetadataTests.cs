@@ -1,4 +1,4 @@
-// Exercises ColumnInfo.Metadata sourced from a custom XML part shaped like
+﻿// Exercises ColumnInfo.Metadata sourced from a custom XML part shaped like
 // <sheet name="..."><column index="N" {anyAttr}/></sheet>. The reader is namespace-agnostic
 // and surfaces every attribute (other than index) verbatim.
 [TestFixture]
@@ -76,7 +76,14 @@ public class ExcelColumnMetadataTests
                     Header("Notes"))
                 {
                     RowIndex = 1u
-                }));
+                }),
+            // A4. A sheet stating no paper size takes the renderer's region default — Letter in
+            // North America, A4 elsewhere — so the rendered page snapshot would depend on where
+            // the test ran rather than on the workbook.
+            new PageSetup
+            {
+                PaperSize = 9
+            });
 
         var sheets = wbPart.Workbook.GetFirstChild<Sheets>()!;
         sheets.Append(new Sheet
