@@ -19,8 +19,11 @@
     }
 
     [ModuleInitializer]
-    public static void InitializeOther() =>
+    public static void InitializeOther()
+    {
+        VerifierSettings.Inline(maxLines: 10, applyMaxLinesToExisting: true);
         VerifierSettings.InitializePlugins();
+    }
 
     static string ProjectDir([CallerFilePath] string here = "") =>
         Path.GetDirectoryName(here)!;

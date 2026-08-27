@@ -154,9 +154,18 @@ public async Task VerifySpreadsheetDocument()
 ```cs
 [Test]
 public Task VerifyWord() =>
-    VerifyFile("sample.docx");
+    VerifyFile("sample.docx")
+        .Snapshot(
+            """
+            {
+              Properties: {
+                Subject: Test Subject,
+                Title: Sample Document
+              }
+            }
+            """);
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L48-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWord' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L48-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWord' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -169,10 +178,19 @@ public Task VerifyWord() =>
 public Task VerifyWordStream()
 {
     var stream = new MemoryStream(File.ReadAllBytes("sample.docx"));
-    return Verify(stream, "docx");
+    return Verify(stream, "docx")
+        .Snapshot(
+            """
+            {
+              Properties: {
+                Subject: Test Subject,
+                Title: Sample Document
+              }
+            }
+            """);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L68-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWordStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L86-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWordStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -198,10 +216,19 @@ public async Task VerifyWordprocessingDocument()
 {
     await using var stream = File.OpenRead("sample.docx");
     using var reader = WordprocessingDocument.Open(stream, false);
-    await Verify(reader);
+    await Verify(reader)
+        .Snapshot(
+            """
+            {
+              Properties: {
+                Subject: Test Subject,
+                Title: Sample Document
+              }
+            }
+            """);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L56-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L65-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -215,9 +242,18 @@ public async Task VerifyWordprocessingDocument()
 ```cs
 [Test]
 public Task VerifyPowerpoint() =>
-    VerifyFile("sample.pptx");
+    VerifyFile("sample.pptx")
+        .Snapshot(
+            """
+            {
+              Properties: {
+                Title: Sample Presentation
+              },
+              SlideCount: 1
+            }
+            """);
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L79-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpoint' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L106-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpoint' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -230,10 +266,19 @@ public Task VerifyPowerpoint() =>
 public Task VerifyPowerpointStream()
 {
     var stream = new MemoryStream(File.ReadAllBytes("sample.pptx"));
-    return Verify(stream, "pptx");
+    return Verify(stream, "pptx")
+        .Snapshot(
+            """
+            {
+              Properties: {
+                Title: Sample Presentation
+              },
+              SlideCount: 1
+            }
+            """);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L127-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L190-L208' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -247,10 +292,19 @@ public async Task VerifyPresentationDocument()
 {
     await using var stream = File.OpenRead("sample.pptx");
     using var reader = PresentationDocument.Open(stream, false);
-    await Verify(reader);
+    await Verify(reader)
+        .Snapshot(
+            """
+            {
+              Properties: {
+                Title: Sample Presentation
+              },
+              SlideCount: 1
+            }
+            """);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L115-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L169-L188' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -372,7 +426,7 @@ public Task ExcludeExcel() =>
     VerifyFile("sample.xlsx")
         .ExcludeTargets("xlsx");
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L87-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcludeExcel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L123-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcludeExcel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The same applies to `docx` and `pptx`. To exclude for every test, call `VerifierSettings.ExcludeTargets("xlsx")` at initialization.

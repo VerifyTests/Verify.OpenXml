@@ -1,6 +1,0 @@
-﻿{
-  Properties: {
-    Title: Sample Presentation
-  },
-  SlideCount: 1
-}
