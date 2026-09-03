@@ -336,9 +336,9 @@ The backend is detected at runtime by probing for the assembly. No code changes 
 
 When a backend is present, every verification (file, stream, or document object) produces additional PNG targets — one per rendered page — alongside the existing binary and text targets. What counts as a page differs per document type:
 
- * **Word** — one page per laid-out page of the document.
- * **PowerPoint** — one page per slide, in `p:sldIdLst` order.
- * **Excel** — pages come from the print layout rather than the sheet: a long sheet paginates downward, and each visible sheet starts a new page with its own paper size and orientation.
+ * **Word** - one page per laid-out page of the document.
+ * **PowerPoint** - one page per slide, in `p:sldIdLst` order.
+ * **Excel** - pages come from the print layout rather than the sheet: a long sheet paginates downward, and each visible sheet starts a new page with its own paper size and orientation.
 
 A single rendered page is written without an index:
 
