@@ -20,6 +20,13 @@ public static partial class VerifyOpenXml
     public static string? FontDirectory { get; set; }
 
     /// <summary>
+    /// The font family to render with when a document declares no default run font — a docx with
+    /// no <c>w:docDefaults</c>, for example. Leaving this null uses the renderer's built-in default
+    /// (Calibri), which a <see cref="FontDirectory"/> that does not carry Calibri then rejects.
+    /// </summary>
+    public static string? DefaultFont { get; set; }
+
+    /// <summary>
     /// The paper to render on when the document states none — a worksheet with no
     /// <c>pageSetup/@paperSize</c>, or a docx with no <c>w:pgSz</c>. <c>true</c> is US Letter,
     /// <c>false</c> is A4. A document that does state its paper size is unaffected.

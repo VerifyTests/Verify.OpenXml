@@ -50,7 +50,7 @@ public class ExcelCommentTests
                     <column index="3" property="Salary" />
                   </sheet>
                 </columnMetadata>
-                """);
+                """.ReplaceLineEndings("\n"));
         }
 
         var sheets = wbPart.Workbook.GetFirstChild<Sheets>()!;

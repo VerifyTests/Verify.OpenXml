@@ -11,6 +11,9 @@ public static class ModuleInitializer
         // the rendered pixels; pinning this also turns a fixture asking for a font the directory
         // does not carry into an outright failure rather than a snapshot mismatch elsewhere.
         VerifyOpenXml.FontDirectory = Path.Combine(projectDir, "..", "Fonts");
+        // sample.docx declares no default run font, so without this it asks for Calibri, which the
+        // committed font directory does not carry.
+        VerifyOpenXml.DefaultFont = "Aptos";
         // A4 whatever the machine's region says. A sheet stating no paperSize otherwise renders
         // Letter on a North American agent and A4 here, which reads as a rendering regression.
         VerifyOpenXml.UseLetterPageSize = false;

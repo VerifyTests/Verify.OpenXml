@@ -91,7 +91,8 @@ public class ExcelColumnMetadataTests
             var customPart = wbPart.AddCustomXmlPart(CustomXmlPartType.CustomXml);
             using var stream = customPart.GetStream(FileMode.Create);
             using var writer = new StreamWriter(stream);
-            writer.Write(customXml);
+            // Raw string literals take the checkout's line endings (CRLF under autocrlf=true on CI).
+            writer.Write(customXml.ReplaceLineEndings("\n"));
         }
 
         return document;
