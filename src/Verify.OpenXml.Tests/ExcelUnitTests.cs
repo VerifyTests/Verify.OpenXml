@@ -1,28 +1,27 @@
-[TestFixture]
 public class ExcelUnitTests
 {
     [Test]
-    public void EscapeCsvValue_NoSpecial() =>
-        Assert.That(VerifyOpenXml.EscapeCsvValue("plain"), Is.EqualTo("plain"));
+    public async Task EscapeCsvValue_NoSpecial() =>
+        await Assert.That(VerifyOpenXml.EscapeCsvValue("plain")).IsEqualTo("plain");
 
     [Test]
-    public void EscapeCsvValue_Comma() =>
-        Assert.That(VerifyOpenXml.EscapeCsvValue("a,b"), Is.EqualTo("\"a,b\""));
+    public async Task EscapeCsvValue_Comma() =>
+        await Assert.That(VerifyOpenXml.EscapeCsvValue("a,b")).IsEqualTo("\"a,b\"");
 
     [Test]
-    public void EscapeCsvValue_Quote() =>
-        Assert.That(VerifyOpenXml.EscapeCsvValue("say \"hi\""), Is.EqualTo("\"say \"\"hi\"\"\""));
+    public async Task EscapeCsvValue_Quote() =>
+        await Assert.That(VerifyOpenXml.EscapeCsvValue("say \"hi\"")).IsEqualTo("\"say \"\"hi\"\"\"");
 
     [Test]
-    public void EscapeCsvValue_Newline() =>
-        Assert.That(VerifyOpenXml.EscapeCsvValue("a\nb"), Is.EqualTo("\"a\nb\""));
+    public async Task EscapeCsvValue_Newline() =>
+        await Assert.That(VerifyOpenXml.EscapeCsvValue("a\nb")).IsEqualTo("\"a\nb\"");
 
     [Test]
-    public void EscapeCsvValue_CarriageReturn() =>
-        Assert.That(VerifyOpenXml.EscapeCsvValue("a\rb"), Is.EqualTo("\"a\rb\""));
+    public async Task EscapeCsvValue_CarriageReturn() =>
+        await Assert.That(VerifyOpenXml.EscapeCsvValue("a\rb")).IsEqualTo("\"a\rb\"");
 
     [Test]
-    public void GetHeaderCellValue_SharedString()
+    public async Task GetHeaderCellValue_SharedString()
     {
         var shared = new List<SharedStringItem>
         {
@@ -34,128 +33,128 @@ public class ExcelUnitTests
             DataType = CellValues.SharedString,
             CellValue = new("1")
         };
-        Assert.That(VerifyOpenXml.GetHeaderCellValue(cell, shared), Is.EqualTo("Second"));
+        await Assert.That(VerifyOpenXml.GetHeaderCellValue(cell, shared)).IsEqualTo("Second");
     }
 
     [Test]
-    public void GetHeaderCellValue_InlineString()
+    public async Task GetHeaderCellValue_InlineString()
     {
         var cell = new Cell
         {
             DataType = CellValues.InlineString,
             InlineString = new(new Text("Inline"))
         };
-        Assert.That(VerifyOpenXml.GetHeaderCellValue(cell, null), Is.EqualTo("Inline"));
+        await Assert.That(VerifyOpenXml.GetHeaderCellValue(cell, null)).IsEqualTo("Inline");
     }
 
     [Test]
-    public void GetHeaderCellValue_Plain()
+    public async Task GetHeaderCellValue_Plain()
     {
         var cell = new Cell
         {
             CellValue = new("42")
         };
-        Assert.That(VerifyOpenXml.GetHeaderCellValue(cell, null), Is.EqualTo("42"));
+        await Assert.That(VerifyOpenXml.GetHeaderCellValue(cell, null)).IsEqualTo("42");
     }
 
     [Test]
-    public void IsCellDateFormatted_NoStyleIndex_False()
+    public async Task IsCellDateFormatted_NoStyleIndex_False()
     {
         using var doc = CreateWorkbook(addStyles: false);
         var cell = new Cell();
-        Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.False);
+        await Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!)).IsFalse();
     }
 
     [Test]
-    public void IsCellDateFormatted_NoStylesPart_False()
+    public async Task IsCellDateFormatted_NoStylesPart_False()
     {
         using var doc = CreateWorkbook(addStyles: false);
         var cell = new Cell
         {
             StyleIndex = 0
         };
-        Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.False);
+        await Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!)).IsFalse();
     }
 
     [Test]
-    public void IsCellDateFormatted_BuiltInRange1()
+    public async Task IsCellDateFormatted_BuiltInRange1()
     {
         using var doc = CreateWorkbookWithFormats(14);
         var cell = new Cell
         {
             StyleIndex = 0
         };
-        Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.True);
+        await Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!)).IsTrue();
     }
 
     [Test]
-    public void IsCellDateFormatted_BuiltInRange2()
+    public async Task IsCellDateFormatted_BuiltInRange2()
     {
         using var doc = CreateWorkbookWithFormats(177);
         var cell = new Cell
         {
             StyleIndex = 0
         };
-        Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.True);
+        await Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!)).IsTrue();
     }
 
     [Test]
-    public void IsCellDateFormatted_BuiltInRange3()
+    public async Task IsCellDateFormatted_BuiltInRange3()
     {
         using var doc = CreateWorkbookWithFormats(182);
         var cell = new Cell
         {
             StyleIndex = 0
         };
-        Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.True);
+        await Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!)).IsTrue();
     }
 
     [Test]
-    public void IsCellDateFormatted_CustomDateFormat()
+    public async Task IsCellDateFormatted_CustomDateFormat()
     {
         using var doc = CreateWorkbookWithFormats(200, customFormatCode: "yyyy-mm-dd");
         var cell = new Cell
         {
             StyleIndex = 0
         };
-        Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.True);
+        await Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!)).IsTrue();
     }
 
     [Test]
-    public void IsCellDateFormatted_CustomNonDateFormat()
+    public async Task IsCellDateFormatted_CustomNonDateFormat()
     {
         using var doc = CreateWorkbookWithFormats(201, customFormatCode: "0.00");
         var cell = new Cell
         {
             StyleIndex = 0
         };
-        Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.False);
+        await Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!)).IsFalse();
     }
 
     [Test]
-    public void IsCellDateFormatted_UnknownFormatId_False()
+    public async Task IsCellDateFormatted_UnknownFormatId_False()
     {
         using var doc = CreateWorkbookWithFormats(500); // not built-in, not in numberingFormats
         var cell = new Cell
         {
             StyleIndex = 0
         };
-        Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!), Is.False);
+        await Assert.That(VerifyOpenXml.IsCellDateFormatted(cell, doc.WorkbookPart!)).IsFalse();
     }
 
     [Test]
-    public void GetColumnInfos_NoRows_ReturnsNull()
+    public async Task GetColumnInfos_NoRows_ReturnsNull()
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
         var wbPart = doc.AddWorkbookPart();
         wbPart.Workbook = new(new Sheets());
         var wsPart = wbPart.AddNewPart<WorksheetPart>();
         wsPart.Worksheet = new(new SheetData());
-        Assert.That(VerifyOpenXml.GetColumnInfos(wsPart, wbPart), Is.Null);
+        await Assert.That(VerifyOpenXml.GetColumnInfos(wsPart, wbPart)).IsNull();
     }
 
     [Test]
-    public void GetColumnInfos_WithRowsAndCustomWidths()
+    public async Task GetColumnInfos_WithRowsAndCustomWidths()
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
         var wbPart = doc.AddWorkbookPart();
@@ -197,15 +196,15 @@ public class ExcelUnitTests
         wsPart.Worksheet = new(columns, sheetData);
 
         var result = VerifyOpenXml.GetColumnInfos(wsPart, wbPart)!;
-        Assert.That(result, Has.Count.EqualTo(2));
-        Assert.That(result[0].Name, Is.EqualTo("Name"));
-        Assert.That(result[0].Width, Is.EqualTo(20.5));
-        Assert.That(result[1].Name, Is.EqualTo("Age"));
-        Assert.That(result[1].Width, Is.Null);
+        await Assert.That(result).Count().IsEqualTo(2);
+        await Assert.That(result[0].Name).IsEqualTo("Name");
+        await Assert.That(result[0].Width).IsEqualTo(20.5);
+        await Assert.That(result[1].Name).IsEqualTo("Age");
+        await Assert.That(result[1].Width).IsNull();
     }
 
     [Test]
-    public void GetColumnInfos_SkipsLeadingEmptyRow()
+    public async Task GetColumnInfos_SkipsLeadingEmptyRow()
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
         var wbPart = doc.AddWorkbookPart();
@@ -236,13 +235,13 @@ public class ExcelUnitTests
         wsPart.Worksheet = new(sheetData);
 
         var result = VerifyOpenXml.GetColumnInfos(wsPart, wbPart)!;
-        Assert.That(result, Has.Count.EqualTo(2));
-        Assert.That(result[0].Name, Is.EqualTo("Name"));
-        Assert.That(result[1].Name, Is.EqualTo("Age"));
+        await Assert.That(result).Count().IsEqualTo(2);
+        await Assert.That(result[0].Name).IsEqualTo("Name");
+        await Assert.That(result[1].Name).IsEqualTo("Age");
     }
 
     [Test]
-    public void GetColumnInfos_RichText_SharedString()
+    public async Task GetColumnInfos_RichText_SharedString()
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
         var wbPart = doc.AddWorkbookPart();
@@ -292,12 +291,12 @@ public class ExcelUnitTests
         wsPart.Worksheet = new(sheetData);
 
         var result = VerifyOpenXml.GetColumnInfos(wsPart, wbPart)!;
-        Assert.That(result[0].ContainsRichText, Is.False);
-        Assert.That(result[1].ContainsRichText, Is.True);
+        await Assert.That(result[0].ContainsRichText).IsFalse();
+        await Assert.That(result[1].ContainsRichText).IsTrue();
     }
 
     [Test]
-    public void GetColumnInfos_RichText_InlineString()
+    public async Task GetColumnInfos_RichText_InlineString()
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
         var wbPart = doc.AddWorkbookPart();
@@ -328,11 +327,11 @@ public class ExcelUnitTests
         wsPart.Worksheet = new(sheetData);
 
         var result = VerifyOpenXml.GetColumnInfos(wsPart, wbPart)!;
-        Assert.That(result[0].ContainsRichText, Is.True);
+        await Assert.That(result[0].ContainsRichText).IsTrue();
     }
 
     [Test]
-    public void GetColumnInfos_RichText_HeaderRowIgnored()
+    public async Task GetColumnInfos_RichText_HeaderRowIgnored()
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
         var wbPart = doc.AddWorkbookPart();
@@ -353,11 +352,11 @@ public class ExcelUnitTests
         wsPart.Worksheet = new(sheetData);
 
         var result = VerifyOpenXml.GetColumnInfos(wsPart, wbPart)!;
-        Assert.That(result[0].ContainsRichText, Is.False);
+        await Assert.That(result[0].ContainsRichText).IsFalse();
     }
 
     [Test]
-    public void BuildSheetInfos_MultipleSheets()
+    public async Task BuildSheetInfos_MultipleSheets()
     {
         using var doc = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
         var wbPart = doc.AddWorkbookPart();
@@ -368,7 +367,7 @@ public class ExcelUnitTests
         AddSheet(wbPart, sheets, "Beta", 2);
 
         var infos = VerifyOpenXml.BuildSheetInfos(wbPart);
-        Assert.That(infos.Select(_ => _.Name), Is.EqualTo(["Alpha", "Beta"]));
+        await Assert.That(infos.Select(_ => _.Name)).IsEquivalentTo(["Alpha", "Beta"], CollectionOrdering.Matching);
     }
 
     static SpreadsheetDocument CreateWorkbook(bool addStyles)

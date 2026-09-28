@@ -1,18 +1,16 @@
 using DocumentFormat.OpenXml.Presentation;
 using A = DocumentFormat.OpenXml.Drawing;
-
-[TestFixture]
 public class PowerpointUnitTests
 {
     [Test]
-    public void GetPowerpointProperties_AllEmpty_ReturnsNull()
+    public async Task GetPowerpointProperties_AllEmpty_ReturnsNull()
     {
         using var doc = CreateEmptyDoc();
-        Assert.That(VerifyOpenXml.GetPowerpointProperties(doc), Is.Null);
+        await Assert.That(VerifyOpenXml.GetPowerpointProperties(doc)).IsNull();
     }
 
     [Test]
-    public void GetPowerpointProperties_Populated()
+    public async Task GetPowerpointProperties_Populated()
     {
         using var doc = CreateEmptyDoc();
         var props = doc.PackageProperties;
@@ -27,24 +25,24 @@ public class PowerpointUnitTests
         props.Revision = "1";
 
         var result = VerifyOpenXml.GetPowerpointProperties(doc)!;
-        Assert.That(result["Title"], Is.EqualTo("T"));
-        Assert.That(result["Revision"], Is.EqualTo("1"));
+        await Assert.That(result["Title"]).IsEqualTo("T");
+        await Assert.That(result["Revision"]).IsEqualTo("1");
         // Creator and LastModifiedBy are intentionally omitted (DeterministicIoPackaging strips them).
-        Assert.That(result.ContainsKey("Creator"), Is.False);
-        Assert.That(result.ContainsKey("LastModifiedBy"), Is.False);
+        await Assert.That(result.ContainsKey("Creator")).IsFalse();
+        await Assert.That(result.ContainsKey("LastModifiedBy")).IsFalse();
     }
 
     [Test]
-    public void GetPowerpointInfo_NoSlides()
+    public async Task GetPowerpointInfo_NoSlides()
     {
         using var doc = CreateEmptyDoc();
         var info = VerifyOpenXml.GetPowerpointInfo(doc);
-        Assert.That(info.SlideCount, Is.EqualTo(0));
-        Assert.That(VerifyOpenXml.GetPowerpointText(doc), Is.Null);
+        await Assert.That(info.SlideCount).IsEqualTo(0);
+        await Assert.That(VerifyOpenXml.GetPowerpointText(doc)).IsNull();
     }
 
     [Test]
-    public void GetPowerpointInfo_WithSlidesAndText()
+    public async Task GetPowerpointInfo_WithSlidesAndText()
     {
         using var doc = CreateEmptyDoc();
         var presPart = doc.PresentationPart!;
@@ -52,28 +50,28 @@ public class PowerpointUnitTests
         AddSlide(presPart, "Second");
 
         var info = VerifyOpenXml.GetPowerpointInfo(doc);
-        Assert.That(info.SlideCount, Is.EqualTo(2));
+        await Assert.That(info.SlideCount).IsEqualTo(2);
 
         var text = VerifyOpenXml.GetPowerpointText(doc);
-        Assert.That(text, Does.Contain("First"));
-        Assert.That(text, Does.Contain("Second"));
-        Assert.That(text, Does.Contain("---"));
+        await Assert.That(text).Contains("First");
+        await Assert.That(text).Contains("Second");
+        await Assert.That(text).Contains("---");
     }
 
     [Test]
-    public void GetPowerpointInfo_SlideWithNoText_TextIsNull()
+    public async Task GetPowerpointInfo_SlideWithNoText_TextIsNull()
     {
         using var doc = CreateEmptyDoc();
         var presPart = doc.PresentationPart!;
         AddEmptySlide(presPart);
 
         var info = VerifyOpenXml.GetPowerpointInfo(doc);
-        Assert.That(info.SlideCount, Is.EqualTo(1));
-        Assert.That(VerifyOpenXml.GetPowerpointText(doc), Is.Null);
+        await Assert.That(info.SlideCount).IsEqualTo(1);
+        await Assert.That(VerifyOpenXml.GetPowerpointText(doc)).IsNull();
     }
 
     [Test]
-    public void AppendSlideText_EmptySlide_ReturnsFalse()
+    public async Task AppendSlideText_EmptySlide_ReturnsFalse()
     {
         using var doc = CreateEmptyDoc();
         var slidePart = doc.PresentationPart!.AddNewPart<SlidePart>();
@@ -90,25 +88,25 @@ public class PowerpointUnitTests
                 new GroupShapeProperties(new A.TransformGroup()))));
 
         var builder = new StringBuilder();
-        Assert.That(VerifyOpenXml.AppendSlideText(builder, slidePart), Is.False);
-        Assert.That(builder.Length, Is.Zero);
+        await Assert.That(VerifyOpenXml.AppendSlideText(builder, slidePart)).IsFalse();
+        await Assert.That(builder.Length).IsZero();
     }
 
     [Test]
-    public void AppendSlideText_WithParagraphs()
+    public async Task AppendSlideText_WithParagraphs()
     {
         using var doc = CreateEmptyDoc();
         var presPart = doc.PresentationPart!;
         var slidePart = AddSlide(presPart, "Line1", "Line2");
         var builder = new StringBuilder();
-        Assert.That(VerifyOpenXml.AppendSlideText(builder, slidePart), Is.True);
+        await Assert.That(VerifyOpenXml.AppendSlideText(builder, slidePart)).IsTrue();
         var text = builder.ToString();
-        Assert.That(text, Does.Contain("Line1"));
-        Assert.That(text, Does.Contain("Line2"));
+        await Assert.That(text).Contains("Line1");
+        await Assert.That(text).Contains("Line2");
     }
 
     [Test]
-    public void AppendSlideText_ParagraphWithNoText_SkippedFromOutput()
+    public async Task AppendSlideText_ParagraphWithNoText_SkippedFromOutput()
     {
         using var doc = CreateEmptyDoc();
         var presPart = doc.PresentationPart!;
@@ -118,7 +116,7 @@ public class PowerpointUnitTests
             new A.Paragraph(new A.Run(new A.RunProperties(), new A.Text("Only"))));
         var builder = new StringBuilder();
         VerifyOpenXml.AppendSlideText(builder, slidePart);
-        Assert.That(builder.ToString(), Is.EqualTo("Only"));
+        await Assert.That(builder.ToString()).IsEqualTo("Only");
     }
 
     static PresentationDocument CreateEmptyDoc()

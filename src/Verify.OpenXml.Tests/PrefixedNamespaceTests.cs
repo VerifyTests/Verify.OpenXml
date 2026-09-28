@@ -1,6 +1,5 @@
 // Verifies that xlsx files created by the OpenXml SDK (which uses prefixed
 // default namespaces like <x:worksheet xmlns:x="...">) are handled correctly.
-[TestFixture]
 public class PrefixedNamespaceTests
 {
     [Test]

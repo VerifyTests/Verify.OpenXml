@@ -1,7 +1,6 @@
 // Exercises ColumnInfo.Note sourced from cell notes (legacy comments) on the header row.
 // Pairs the notes with a column-metadata custom XML part so the ApplyColumnMetadata
 // carry-through (which rebuilds each ColumnInfo) is covered too.
-[TestFixture]
 public class ExcelCommentTests
 {
     [Test]

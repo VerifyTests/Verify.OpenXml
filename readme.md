@@ -90,7 +90,7 @@ public static void Initialize() =>
 public Task VerifyExcel() =>
     VerifyFile("sample.xlsx");
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L4-L10' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L3-L9' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -106,7 +106,7 @@ public Task VerifyExcelStream()
     return Verify(stream, "xlsx");
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L37-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcelStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L36-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyExcelStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -123,7 +123,7 @@ public async Task VerifySpreadsheetDocument()
     await Verify(reader);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L25-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-SpreadsheetDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L24-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-SpreadsheetDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -165,7 +165,7 @@ public Task VerifyWord() =>
             }
             """);
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L48-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWord' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L47-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWord' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -190,7 +190,7 @@ public Task VerifyWordStream()
             """);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L86-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWordStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L85-L103' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWordStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -228,7 +228,7 @@ public async Task VerifyWordprocessingDocument()
             """);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L65-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L64-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -253,7 +253,7 @@ public Task VerifyPowerpoint() =>
             }
             """);
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L106-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpoint' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L105-L120' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpoint' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -278,7 +278,7 @@ public Task VerifyPowerpointStream()
             """);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L190-L208' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L189-L207' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -304,7 +304,7 @@ public async Task VerifyPresentationDocument()
             """);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L169-L188' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L168-L187' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -426,7 +426,7 @@ public Task ExcludeExcel() =>
     VerifyFile("sample.xlsx")
         .ExcludeTargets("xlsx");
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L123-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcludeExcel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L122-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcludeExcel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The same applies to `docx` and `pptx`. To exclude for every test, call `VerifierSettings.ExcludeTargets("xlsx")` at initialization.

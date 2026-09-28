@@ -1,7 +1,6 @@
 // Full-pipeline Verify tests that build a SpreadsheetDocument in memory to
 // exercise branches of VerifyOpenXml.Convert / GetCellValue that aren't reachable
 // from sample.xlsx (Boolean cells, Date-typed cells, formula formatting).
-[TestFixture]
 public class ExcelConvertBranchTests
 {
     [Test]

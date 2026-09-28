@@ -1,7 +1,6 @@
 // Exercises ColumnInfo.Metadata sourced from a custom XML part shaped like
 // <sheet name="..."><column index="N" {anyAttr}/></sheet>. The reader is namespace-agnostic
 // and surfaces every attribute (other than index) verbatim.
-[TestFixture]
 public class ExcelColumnMetadataTests
 {
     [Test]

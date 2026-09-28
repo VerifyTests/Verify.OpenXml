@@ -9,3 +9,4 @@ obj/
 nugets/
 src/Tests/~$sample.xlsx
 *.lnk
+TestResults/

@@ -1,6 +1,5 @@
 // Exercises the data-validation, conditional-formatting and column-level-style
 // metadata captured per ColumnInfo.
-[TestFixture]
 public class ExcelValidationTests
 {
     [Test]

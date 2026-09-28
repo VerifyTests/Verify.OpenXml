@@ -13,8 +13,6 @@ using EmbedBoldFont = DocumentFormat.OpenXml.Wordprocessing.EmbedBoldFont;
 using EmbedItalicFont = DocumentFormat.OpenXml.Wordprocessing.EmbedItalicFont;
 using EmbedBoldItalicFont = DocumentFormat.OpenXml.Wordprocessing.EmbedBoldItalicFont;
 using CustomProps = DocumentFormat.OpenXml.CustomProperties.Properties;
-
-[TestFixture]
 public class WordUnitTests
 {
     static WordprocessingDocument CreateDoc(Body? body = null)
@@ -27,49 +25,49 @@ public class WordUnitTests
     }
 
     [Test]
-    public void GetWordDocumentText_NoMainPart_ReturnsNull()
+    public async Task GetWordDocumentText_NoMainPart_ReturnsNull()
     {
         var stream = new MemoryStream();
         using var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document);
-        Assert.That(VerifyOpenXml.GetWordDocumentText(doc), Is.Null);
+        await Assert.That(VerifyOpenXml.GetWordDocumentText(doc)).IsNull();
     }
 
     [Test]
-    public void GetWordDocumentText_EmptyBody_ReturnsNull()
+    public async Task GetWordDocumentText_EmptyBody_ReturnsNull()
     {
         using var doc = CreateDoc();
-        Assert.That(VerifyOpenXml.GetWordDocumentText(doc), Is.Null);
+        await Assert.That(VerifyOpenXml.GetWordDocumentText(doc)).IsNull();
     }
 
     [Test]
-    public void GetWordDocumentText_ParagraphsOnly()
+    public async Task GetWordDocumentText_ParagraphsOnly()
     {
         var body = new Body(MakeParagraph("Hello"), MakeParagraph("World"));
         using var doc = CreateDoc(body);
         var text = VerifyOpenXml.GetWordDocumentText(doc);
-        Assert.That(text, Does.Contain("Hello"));
-        Assert.That(text, Does.Contain("World"));
+        await Assert.That(text).Contains("Hello");
+        await Assert.That(text).Contains("World");
     }
 
     [Test]
-    public void GetWordDocumentText_EmptyParagraphsSkipped()
+    public async Task GetWordDocumentText_EmptyParagraphsSkipped()
     {
         var body = new Body(new Paragraph(), MakeParagraph("Only"));
         using var doc = CreateDoc(body);
         var text = VerifyOpenXml.GetWordDocumentText(doc)!;
-        Assert.That(text.TrimEnd(), Is.EqualTo("Only"));
+        await Assert.That(text.TrimEnd()).IsEqualTo("Only");
     }
 
     [Test]
-    public void GetWordDocumentText_AllEmpty_ReturnsNull()
+    public async Task GetWordDocumentText_AllEmpty_ReturnsNull()
     {
         var body = new Body(new Paragraph());
         using var doc = CreateDoc(body);
-        Assert.That(VerifyOpenXml.GetWordDocumentText(doc), Is.Null);
+        await Assert.That(VerifyOpenXml.GetWordDocumentText(doc)).IsNull();
     }
 
     [Test]
-    public void GetWordDocumentText_PreservesDocumentOrder()
+    public async Task GetWordDocumentText_PreservesDocumentOrder()
     {
         var row = new DocumentFormat.OpenXml.Wordprocessing.TableRow(
             new DocumentFormat.OpenXml.Wordprocessing.TableCell(MakeParagraph("cell")));
@@ -81,11 +79,11 @@ public class WordUnitTests
 
         var text = VerifyOpenXml.GetWordDocumentText(doc)!;
         var lines = text.Split('\n').Select(_ => _.Trim()).Where(_ => _.Length > 0).ToList();
-        Assert.That(lines, Is.EqualTo(["before", "cell", "after"]));
+        await Assert.That(lines).IsEquivalentTo(["before", "cell", "after"], CollectionOrdering.Matching);
     }
 
     [Test]
-    public void GetWordDocumentText_InlineContentControl()
+    public async Task GetWordDocumentText_InlineContentControl()
     {
         var sdt = new DocumentFormat.OpenXml.Wordprocessing.SdtRun(
             new DocumentFormat.OpenXml.Wordprocessing.SdtContentRun(
@@ -95,21 +93,21 @@ public class WordUnitTests
             sdt);
         using var doc = CreateDoc(new(paragraph));
 
-        Assert.That(VerifyOpenXml.GetWordDocumentText(doc)!.TrimEnd(), Is.EqualTo("before controlled"));
+        await Assert.That(VerifyOpenXml.GetWordDocumentText(doc)!.TrimEnd()).IsEqualTo("before controlled");
     }
 
     [Test]
-    public void GetWordDocumentText_BlockContentControl()
+    public async Task GetWordDocumentText_BlockContentControl()
     {
         var sdt = new DocumentFormat.OpenXml.Wordprocessing.SdtBlock(
             new DocumentFormat.OpenXml.Wordprocessing.SdtContentBlock(MakeParagraph("inside")));
         using var doc = CreateDoc(new(sdt));
 
-        Assert.That(VerifyOpenXml.GetWordDocumentText(doc)!.TrimEnd(), Is.EqualTo("inside"));
+        await Assert.That(VerifyOpenXml.GetWordDocumentText(doc)!.TrimEnd()).IsEqualTo("inside");
     }
 
     [Test]
-    public void GetWordDocumentText_ContentControlInTableCell()
+    public async Task GetWordDocumentText_ContentControlInTableCell()
     {
         var sdt = new DocumentFormat.OpenXml.Wordprocessing.SdtBlock(
             new DocumentFormat.OpenXml.Wordprocessing.SdtContentBlock(MakeParagraph("value")));
@@ -118,29 +116,29 @@ public class WordUnitTests
             new DocumentFormat.OpenXml.Wordprocessing.TableCell(sdt));
         using var doc = CreateDoc(new(new Table(row)));
 
-        Assert.That(VerifyOpenXml.GetWordDocumentText(doc)!.TrimEnd(), Is.EqualTo("label\tvalue"));
+        await Assert.That(VerifyOpenXml.GetWordDocumentText(doc)!.TrimEnd()).IsEqualTo("label\tvalue");
     }
 
     [Test]
-    public void AppendWordParagraphText_Hyperlink()
+    public async Task AppendWordParagraphText_Hyperlink()
     {
         var hyperlink = new DocumentFormat.OpenXml.Wordprocessing.Hyperlink(
             new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText("linked")));
-        Assert.That(Render(new(hyperlink)), Is.EqualTo("linked"));
+        await Assert.That(Render(new(hyperlink))).IsEqualTo("linked");
     }
 
     [Test]
-    public void AppendWordParagraphText_InterleavedTextAndTab()
+    public async Task AppendWordParagraphText_InterleavedTextAndTab()
     {
         var run = new DocumentFormat.OpenXml.Wordprocessing.Run(
             new WordText("a"),
             new TabChar(),
             new WordText("b"));
-        Assert.That(Render(new(run)), Is.EqualTo("a\tb"));
+        await Assert.That(Render(new(run))).IsEqualTo("a\tb");
     }
 
     [Test]
-    public void GetWordDocumentText_WithTable()
+    public async Task GetWordDocumentText_WithTable()
     {
         var row1 = new DocumentFormat.OpenXml.Wordprocessing.TableRow(
             new DocumentFormat.OpenXml.Wordprocessing.TableCell(MakeParagraph("a1")),
@@ -151,19 +149,19 @@ public class WordUnitTests
         var body = new Body(new Table(row1, row2));
         using var doc = CreateDoc(body);
         var text = VerifyOpenXml.GetWordDocumentText(doc)!;
-        Assert.That(text, Does.Contain("a1\tb1"));
-        Assert.That(text, Does.Contain("a2\tb2"));
+        await Assert.That(text).Contains("a1\tb1");
+        await Assert.That(text).Contains("a2\tb2");
     }
 
     [Test]
-    public void AppendWordParagraphText_TextAndTab()
+    public async Task AppendWordParagraphText_TextAndTab()
     {
         var run = new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText("Hi"), new TabChar());
-        Assert.That(Render(new(run)), Is.EqualTo("Hi\t"));
+        await Assert.That(Render(new(run))).IsEqualTo("Hi\t");
     }
 
     [Test]
-    public void AppendWordParagraphText_PageBreak()
+    public async Task AppendWordParagraphText_PageBreak()
     {
         var run = new DocumentFormat.OpenXml.Wordprocessing.Run(
             new WordText("Before"),
@@ -171,24 +169,24 @@ public class WordUnitTests
             {
                 Type = BreakValues.Page
             });
-        Assert.That(Render(new(run)), Does.Contain("--- Page Break ---"));
+        await Assert.That(Render(new(run))).Contains("--- Page Break ---");
     }
 
     [Test]
-    public void AppendWordParagraphText_LineBreak()
+    public async Task AppendWordParagraphText_LineBreak()
     {
         var run = new DocumentFormat.OpenXml.Wordprocessing.Run(new WordText("A"), new Break());
         var result = Render(new(run));
-        Assert.That(result, Does.StartWith("A"));
-        Assert.That(result, Does.Not.Contain("Page Break"));
+        await Assert.That(result).StartsWith("A");
+        await Assert.That(result).DoesNotContain("Page Break");
     }
 
     [Test]
-    public void AppendWordParagraphText_Empty_ReturnsFalse()
+    public async Task AppendWordParagraphText_Empty_ReturnsFalse()
     {
         var builder = new StringBuilder();
-        Assert.That(VerifyOpenXml.AppendWordParagraphText(builder, new()), Is.False);
-        Assert.That(builder.Length, Is.Zero);
+        await Assert.That(VerifyOpenXml.AppendWordParagraphText(builder, new())).IsFalse();
+        await Assert.That(builder.Length).IsZero();
     }
 
     static string Render(Paragraph paragraph)
@@ -199,16 +197,16 @@ public class WordUnitTests
     }
 
     [Test]
-    public void GetWordDocumentFonts_NoFontTablePart_ReturnsNulls()
+    public async Task GetWordDocumentFonts_NoFontTablePart_ReturnsNulls()
     {
         using var doc = CreateDoc();
         var (fonts, embedded) = VerifyOpenXml.GetWordDocumentFonts(doc);
-        Assert.That(fonts, Is.Null);
-        Assert.That(embedded, Is.Null);
+        await Assert.That(fonts).IsNull();
+        await Assert.That(embedded).IsNull();
     }
 
     [Test]
-    public void GetWordDocumentFonts_AllFourEmbedTypes()
+    public async Task GetWordDocumentFonts_AllFourEmbedTypes()
     {
         using var doc = CreateDoc();
         var fontPart = doc.MainDocumentPart!.AddNewPart<FontTablePart>();
@@ -241,30 +239,30 @@ public class WordUnitTests
             new WordFont());
 
         var (fonts, embedded) = VerifyOpenXml.GetWordDocumentFonts(doc);
-        Assert.That(fonts, Is.EquivalentTo(["Bold", "BoldItalic", "Italic", "NoEmbed", "Regular"]));
-        Assert.That(embedded, Is.EquivalentTo(["Bold", "BoldItalic", "Italic", "Regular"]));
+        await Assert.That(fonts).IsEquivalentTo(["Bold", "BoldItalic", "Italic", "NoEmbed", "Regular"]);
+        await Assert.That(embedded).IsEquivalentTo(["Bold", "BoldItalic", "Italic", "Regular"]);
     }
 
     [Test]
-    public void GetWordDocumentFonts_OnlyNullNames_ReturnsNulls()
+    public async Task GetWordDocumentFonts_OnlyNullNames_ReturnsNulls()
     {
         using var doc = CreateDoc();
         var fontPart = doc.MainDocumentPart!.AddNewPart<FontTablePart>();
         fontPart.Fonts = new(new WordFont());
         var (fonts, embedded) = VerifyOpenXml.GetWordDocumentFonts(doc);
-        Assert.That(fonts, Is.Null);
-        Assert.That(embedded, Is.Null);
+        await Assert.That(fonts).IsNull();
+        await Assert.That(embedded).IsNull();
     }
 
     [Test]
-    public void GetWordProperties_AllEmpty_ReturnsNull()
+    public async Task GetWordProperties_AllEmpty_ReturnsNull()
     {
         using var doc = CreateDoc();
-        Assert.That(VerifyOpenXml.GetWordProperties(doc), Is.Null);
+        await Assert.That(VerifyOpenXml.GetWordProperties(doc)).IsNull();
     }
 
     [Test]
-    public void GetWordProperties_Populated()
+    public async Task GetWordProperties_Populated()
     {
         using var doc = CreateDoc();
         var props = doc.PackageProperties;
@@ -279,27 +277,27 @@ public class WordUnitTests
         props.Revision = "1";
 
         var result = VerifyOpenXml.GetWordProperties(doc)!;
-        Assert.That(result["Title"], Is.EqualTo("T"));
-        Assert.That(result["Subject"], Is.EqualTo("S"));
-        Assert.That(result["Keywords"], Is.EqualTo("K"));
-        Assert.That(result["Description"], Is.EqualTo("D"));
-        Assert.That(result["Category"], Is.EqualTo("Cat"));
-        Assert.That(result["ContentStatus"], Is.EqualTo("Draft"));
-        Assert.That(result["Revision"], Is.EqualTo("1"));
+        await Assert.That(result["Title"]).IsEqualTo("T");
+        await Assert.That(result["Subject"]).IsEqualTo("S");
+        await Assert.That(result["Keywords"]).IsEqualTo("K");
+        await Assert.That(result["Description"]).IsEqualTo("D");
+        await Assert.That(result["Category"]).IsEqualTo("Cat");
+        await Assert.That(result["ContentStatus"]).IsEqualTo("Draft");
+        await Assert.That(result["Revision"]).IsEqualTo("1");
         // Creator and LastModifiedBy are intentionally omitted (DeterministicIoPackaging strips them).
-        Assert.That(result.ContainsKey("Creator"), Is.False);
-        Assert.That(result.ContainsKey("LastModifiedBy"), Is.False);
+        await Assert.That(result.ContainsKey("Creator")).IsFalse();
+        await Assert.That(result.ContainsKey("LastModifiedBy")).IsFalse();
     }
 
     [Test]
-    public void GetWordCustomProperties_NoPart_ReturnsNull()
+    public async Task GetWordCustomProperties_NoPart_ReturnsNull()
     {
         using var doc = CreateDoc();
-        Assert.That(VerifyOpenXml.GetWordCustomProperties(doc), Is.Null);
+        await Assert.That(VerifyOpenXml.GetWordCustomProperties(doc)).IsNull();
     }
 
     [Test]
-    public void GetWordCustomProperties_AllVariantTypes()
+    public async Task GetWordCustomProperties_AllVariantTypes()
     {
         using var doc = CreateDoc();
         var part = doc.AddCustomFilePropertiesPart();
@@ -320,22 +318,22 @@ public class WordUnitTests
         });
 
         var result = VerifyOpenXml.GetWordCustomProperties(doc)!;
-        Assert.That(result["BoolProp"], Is.EqualTo(true));
-        Assert.That(result["IntProp"], Is.EqualTo(42));
-        Assert.That(result["FloatProp"], Is.EqualTo(1.5f));
-        Assert.That(result["DoubleProp"], Is.EqualTo(2.5d));
-        Assert.That(result["DateProp"], Is.EqualTo("2025-01-01T00:00:00Z"));
-        Assert.That(result["StringProp"], Is.EqualTo("hello"));
-        Assert.That(result["UnknownProp"], Is.EqualTo("raw"));
+        await Assert.That((bool)result["BoolProp"]!).IsTrue();
+        await Assert.That(result["IntProp"]).IsEqualTo(42);
+        await Assert.That(result["FloatProp"]).IsEqualTo(1.5f);
+        await Assert.That(result["DoubleProp"]).IsEqualTo(2.5d);
+        await Assert.That(result["DateProp"]).IsEqualTo("2025-01-01T00:00:00Z");
+        await Assert.That(result["StringProp"]).IsEqualTo("hello");
+        await Assert.That(result["UnknownProp"]).IsEqualTo("raw");
     }
 
     [Test]
-    public void GetWordCustomProperties_Empty_ReturnsNull()
+    public async Task GetWordCustomProperties_Empty_ReturnsNull()
     {
         using var doc = CreateDoc();
         var part = doc.AddCustomFilePropertiesPart();
         part.Properties = new();
-        Assert.That(VerifyOpenXml.GetWordCustomProperties(doc), Is.Null);
+        await Assert.That(VerifyOpenXml.GetWordCustomProperties(doc)).IsNull();
     }
 
     static Paragraph MakeParagraph(string text) =>

@@ -1,6 +1,5 @@
 using DocumentFormat.OpenXml.CustomProperties;
 
-[TestFixture]
 public class ExcelDocumentPropertiesTests
 {
     const string formatId = "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}";

@@ -2,7 +2,6 @@
 // as emitted for an instruction row above the data — is skipped when locating the header, so the
 // real columns (Id/Name/Salary) are surfaced rather than the banner text. Also covers that the
 // banner's rich text is not mis-attributed to the column beneath it.
-[TestFixture]
 public class ExcelBannerTests
 {
     [Test]
