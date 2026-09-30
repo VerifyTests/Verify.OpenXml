@@ -60,7 +60,6 @@
       <Link>sample_multiple_sheets.xlsx</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <PackageReference Include="Verify.DiffPlex" />
     <PackageReference Include="Verify.TUnit" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="Argon" />
