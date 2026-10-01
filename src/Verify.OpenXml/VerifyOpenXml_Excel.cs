@@ -19,7 +19,7 @@ public static partial class VerifyOpenXml
 
     static ConversionResult ConvertExcel(SpreadsheetDocument document, IReadOnlyDictionary<string, object> settings)
     {
-        var sheets = Convert(document).ToList();
+        var sheets = outputs.HasFlag(OpenXmlOutputs.Csv) ? Convert(document).ToList() : [];
         var workbookPart = document.WorkbookPart!;
 
         // Extract document properties. Creator, LastModifiedBy, Created and Modified are deliberately
@@ -35,7 +35,7 @@ public static partial class VerifyOpenXml
         var info = new ExcelInfo
         {
             Sheets = sheetInfos,
-            WorksheetCount = sheets.Count,
+            WorksheetCount = workbookPart.Workbook!.Sheets!.Elements<Sheet>().Count(),
             Title = packageProperties.Title,
             Subject = packageProperties.Subject,
             Keywords = packageProperties.Keywords,
@@ -84,7 +84,7 @@ public static partial class VerifyOpenXml
             var (csv, _) = sheets[0];
             targets.Add(new("csv", csv));
         }
-        else
+        else if (sheets.Count > 1)
         {
             targets.AddRange(sheets.Select(_ => new Target("csv", _.Csv, _.Name)));
         }
@@ -93,7 +93,10 @@ public static partial class VerifyOpenXml
         // Rendering needs a package stream. Reuse the deterministic xlsx when built; otherwise render
         // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
         // so the rendered pixels are the same either way).
-        MorphRenderer.AddExcelPages(deterministic ?? sourceStream, targets);
+        if (RenderingEnabled)
+        {
+            MorphRenderer.AddExcelPages(deterministic ?? sourceStream, targets);
+        }
 #endif
 
         return new(info, targets);

@@ -78,6 +78,28 @@ public static void Initialize() =>
 <!-- endSnippet -->
 
 
+### Outputs
+
+`Initialize` takes an optional `OpenXmlOutputs` flags value that controls, globally, which kinds of target a document is split into. Kinds not selected are never extracted or rendered, so they cost nothing.
+
+ * `Png`: one png per rendered page (`net10.0` with a Morph rendering backend referenced).
+ * `Text`: the txt target holding the text of a Word document or PowerPoint presentation.
+ * `Csv`: one csv target per Excel worksheet.
+ * `All`: all of the above. The default.
+
+The info target and the source document (docx/xlsx/pptx) are not affected. Use `VerifierSettings.ExcludeTargets` to drop the source document.
+
+<!-- snippet: InitializeOutputs -->
+<a id='snippet-InitializeOutputs'></a>
+```cs
+[ModuleInitializer]
+public static void Initialize() =>
+    VerifyOpenXml.Initialize(OpenXmlOutputs.Csv);
+```
+<sup><a href='/src/StaticSettingsTests/ModuleInitializer.cs#L3-L9' title='Snippet source file'>snippet source</a> | <a href='#snippet-InitializeOutputs' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
 ### Excel
 
 

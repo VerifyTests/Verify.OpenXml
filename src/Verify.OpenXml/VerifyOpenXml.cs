@@ -39,7 +39,13 @@ public static partial class VerifyOpenXml
     /// </remarks>
     public static bool? UseLetterPageSize { get; set; }
 
-    public static void Initialize()
+    static OpenXmlOutputs outputs = OpenXmlOutputs.All;
+
+    /// <param name="outputs">
+    /// The kinds of target documents are split into. Kinds not included are never extracted or
+    /// rendered. Defaults to <see cref="OpenXmlOutputs.All" />.
+    /// </param>
+    public static void Initialize(OpenXmlOutputs outputs = OpenXmlOutputs.All)
     {
         if (Initialized)
         {
@@ -47,6 +53,7 @@ public static partial class VerifyOpenXml
         }
 
         Initialized = true;
+        VerifyOpenXml.outputs = outputs;
 
         VerifierSettings.RegisterStreamConverter("xlsx", (_, target, settings) => ConvertExcel(target, settings));
         VerifierSettings.RegisterFileConverter<SpreadsheetDocument>((document, _) => ToPackage(document, "xlsx"));
@@ -60,12 +67,13 @@ public static partial class VerifyOpenXml
 
     /// <summary>
     /// Whether rendering will produce PNG targets. Always false below <c>net10.0</c>, where the Morph
-    /// integration is compiled out. Cloning the source package is only worth it for the deterministic
+    /// integration is compiled out, and false when <see cref="OpenXmlOutputs.Png" /> is not selected. Cloning the source package is only worth it for the deterministic
     /// binary target or for rendering, so each converter checks this before cloning.
     /// </summary>
     static bool RenderingEnabled =>
 #if NET10_0_OR_GREATER
-        MorphRenderer.Enabled;
+        MorphRenderer.Enabled &&
+        outputs.HasFlag(OpenXmlOutputs.Png);
 #else
         false;
 #endif
