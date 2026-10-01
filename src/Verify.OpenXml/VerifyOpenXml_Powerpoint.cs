@@ -17,7 +17,7 @@ public static partial class VerifyOpenXml
     static ConversionResult ConvertPowerpoint(PresentationDocument document, IReadOnlyDictionary<string, object> settings)
     {
         var info = GetPowerpointInfo(document);
-        var text = GetPowerpointText(document);
+        var text = outputs.HasFlag(OpenXmlOutputs.Text) ? GetPowerpointText(document) : null;
 
         // Building the deterministic pptx is expensive, so skip it when the pptx target is excluded.
         // The text and info are extracted from the document, so they are unaffected.
@@ -57,7 +57,10 @@ public static partial class VerifyOpenXml
         // Rendering needs a package stream. Reuse the deterministic pptx when built; otherwise render
         // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
         // so the rendered pixels are the same either way).
-        MorphRenderer.AddPowerpointPages(deterministic ?? sourceStream, targets);
+        if (RenderingEnabled)
+        {
+            MorphRenderer.AddPowerpointPages(deterministic ?? sourceStream, targets);
+        }
 #endif
 
         return new(info, targets);

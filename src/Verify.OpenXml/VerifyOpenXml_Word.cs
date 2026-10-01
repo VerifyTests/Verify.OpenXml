@@ -25,7 +25,7 @@ public static partial class VerifyOpenXml
     static ConversionResult ConvertWord(WordprocessingDocument document, IReadOnlyDictionary<string, object> settings)
     {
         var info = GetWordInfo(document);
-        var text = GetWordDocumentText(document);
+        var text = outputs.HasFlag(OpenXmlOutputs.Text) ? GetWordDocumentText(document) : null;
 
         // Building the deterministic docx is expensive, so skip it when the docx target is excluded.
         var buildDeterministic = !settings.IsTargetExcluded("docx");
@@ -64,7 +64,10 @@ public static partial class VerifyOpenXml
         // Rendering needs a package stream. Reuse the deterministic docx when built; otherwise render
         // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
         // so the rendered pixels are the same either way).
-        MorphRenderer.AddWordPages(deterministic ?? sourceStream, targets);
+        if (RenderingEnabled)
+        {
+            MorphRenderer.AddWordPages(deterministic ?? sourceStream, targets);
+        }
 #endif
 
         return new(info, targets);
