@@ -8,6 +8,11 @@ namespace VerifyTests;
 public enum OpenXmlOutputs
 {
     /// <summary>
+    /// No outputs. Only the source document and info are emitted.
+    /// </summary>
+    None = 0,
+
+    /// <summary>
     /// One png per rendered page. Only produced on <c>net10.0</c> with a Morph rendering backend referenced.
     /// </summary>
     Png = 1,
