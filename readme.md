@@ -85,6 +85,7 @@ public static void Initialize() =>
  * `Png`: one png per rendered page (`net10.0` with a Morph rendering backend referenced).
  * `Text`: the txt target holding the text of a Word document or PowerPoint presentation.
  * `Csv`: one csv target per Excel worksheet.
+ * `None`: none of the above. Only the info and the source document are emitted.
  * `All`: all of the above. The default.
 
 The info target and the source document (docx/xlsx/pptx) are not affected. Use `VerifierSettings.ExcludeTargets` to drop the source document.
