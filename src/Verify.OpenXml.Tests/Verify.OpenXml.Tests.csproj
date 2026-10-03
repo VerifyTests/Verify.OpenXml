@@ -17,6 +17,7 @@
     <PackageReference Include="DocumentFormat.OpenXml" />
     <ProjectReference Include="..\Verify.OpenXml\Verify.OpenXml.csproj" />
     <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
+    <PackageReference Include="ProjectFiles" PrivateAssets="all" />
 
     <None Update="sample.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -5,7 +5,7 @@ public static class ModuleInitializer
     {
         VerifyOpenXml.Initialize();
 
-        var projectDir = ProjectDir();
+        var projectDir = Path.GetDirectoryName(ProjectFiles.ProjectFile.FullPath)!;
         // Render from the committed fonts only, never the machine's. Font metrics decide column
         // widths and so where text wraps, so a face that resolves differently here and on CI moves
         // the rendered pixels; pinning this also turns a fixture asking for a font the directory
@@ -28,7 +28,4 @@ public static class ModuleInitializer
         VerifierSettings.Inline(maxLines: 10, applyMaxLinesToExisting: true);
         VerifierSettings.InitializePlugins();
     }
-
-    static string ProjectDir([CallerFilePath] string here = "") =>
-        Path.GetDirectoryName(here)!;
 }

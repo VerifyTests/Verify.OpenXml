@@ -3,9 +3,9 @@ public class Tests
 {
     [Test]
     public Task Excel() =>
-        VerifyFile("sample.xlsx");
+        VerifyFile(ProjectFiles.sample_xlsx.Path);
 
     [Test]
     public Task Word() =>
-        VerifyFile("sample.docx");
+        VerifyFile(ProjectFiles.sample_docx.Path);
 }

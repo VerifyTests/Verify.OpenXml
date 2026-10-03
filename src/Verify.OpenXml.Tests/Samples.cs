@@ -10,15 +10,15 @@
 
     [Test]
     public Task MultipleSheets() =>
-        VerifyFile("sample_multiple_sheets.xlsx");
+        VerifyFile(ProjectFiles.sample_multiple_sheets_xlsx.Path);
 
     [Test]
     public Task HiddenRow() =>
-        VerifyFile("sample_hidden_row.xlsx");
+        VerifyFile(ProjectFiles.sample_hidden_row_xlsx.Path);
 
     [Test]
     public Task DontScrub() =>
-        VerifyFile("sample.xlsx")
+        VerifyFile(ProjectFiles.sample_xlsx.Path)
             .DontScrubGuids().DontScrubDateTimes();
 
     #region SpreadsheetDocument

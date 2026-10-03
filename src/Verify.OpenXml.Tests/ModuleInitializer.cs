@@ -14,7 +14,7 @@
     [ModuleInitializer]
     public static void InitializeRendering()
     {
-        VerifyOpenXml.FontDirectory = Path.Combine(ProjectDir(), "..", "Fonts");
+        VerifyOpenXml.FontDirectory = Path.Combine(ProjectFiles.ProjectDirectory, "..", "Fonts");
         VerifyOpenXml.UseLetterPageSize = false;
     }
 
@@ -24,7 +24,4 @@
         VerifierSettings.Inline(maxLines: 10, applyMaxLinesToExisting: true);
         VerifierSettings.InitializePlugins();
     }
-
-    static string ProjectDir([CallerFilePath] string here = "") =>
-        Path.GetDirectoryName(here)!;
 }
