@@ -28,6 +28,10 @@
       <LinkBase>Tests\</LinkBase>
       <Link>Tests\ExcelValidationTests.cs</Link>
     </Compile>
+    <Compile Include="..\Verify.OpenXml.Tests\PowerpointPagesTests.cs">
+      <LinkBase>Tests\</LinkBase>
+      <Link>Tests\PowerpointPagesTests.cs</Link>
+    </Compile>
     <Compile Include="..\Verify.OpenXml.Tests\PrefixedNamespaceTests.cs">
       <LinkBase>Tests\</LinkBase>
       <Link>Tests\PrefixedNamespaceTests.cs</Link>

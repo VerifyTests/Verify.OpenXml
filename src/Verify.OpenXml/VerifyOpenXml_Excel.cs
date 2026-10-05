@@ -19,7 +19,14 @@ public static partial class VerifyOpenXml
 
     static ConversionResult ConvertExcel(SpreadsheetDocument document, IReadOnlyDictionary<string, object> settings)
     {
-        var sheets = outputs.HasFlag(OpenXmlOutputs.Csv) ? Convert(document).ToList() : [];
+        // Reading the sheets is the expensive part of a workbook with no rendering, so skip it when
+        // the verification excludes them, with ExcludeDerivedTargets("csv").
+        List<(StringBuilder Csv, string Name)> sheets = [];
+        if (!settings.IsDerivedTargetExcluded("csv"))
+        {
+            sheets = Convert(document).ToList();
+        }
+
         var workbookPart = document.WorkbookPart!;
 
         // Extract document properties. Creator, LastModifiedBy, Created and Modified are deliberately
@@ -53,53 +60,53 @@ public static partial class VerifyOpenXml
             Protection = BuildWorkbookProtectionInfo(workbookPart)
         };
 
+        // Names the pages, and says which of them the verification wants. A workbook has pages only
+        // once it is rendered: they come from the print layout, not from the sheets.
+        var conversion = new PagedConversion(settings)
+        {
+            Info = info
+        };
+
         // Building the deterministic xlsx is expensive, so skip it when the xlsx target is excluded.
         // The csv sheets and info are extracted from the document, so they are unaffected.
         var buildDeterministic = !settings.IsTargetExcluded("xlsx");
+        var render = RenderingEnabled(conversion);
 
         using var sourceStream = new MemoryStream();
         if (buildDeterministic ||
-            RenderingEnabled)
+            render)
         {
             document.Clone(sourceStream);
             sourceStream.Position = 0;
         }
 
-        List<Target> targets = [];
         // ReSharper disable once TooWideLocalVariableScope
         // ReSharper disable once RedundantAssignment
         Stream? deterministic = null;
         if (buildDeterministic)
         {
             deterministic = DeterministicPackage.Convert(sourceStream);
-            targets.Add(
-                new("xlsx", deterministic)
-                {
-                    BypassComparersForSubsequentOnDifference = true
-                });
+            conversion.Source(new("xlsx", deterministic));
         }
 
-        if (sheets.Count == 1)
+        // Named for its sheet even when it is the only one, so that a second sheet adds a file rather
+        // than renaming the first.
+        foreach (var (csv, name) in sheets)
         {
-            var (csv, _) = sheets[0];
-            targets.Add(new("csv", csv));
-        }
-        else if (sheets.Count > 1)
-        {
-            targets.AddRange(sheets.Select(_ => new Target("csv", _.Csv, _.Name)));
+            conversion.AddDerived(new("csv", csv, name));
         }
 
 #if NET10_0_OR_GREATER
         // Rendering needs a package stream. Reuse the deterministic xlsx when built; otherwise render
         // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
         // so the rendered pixels are the same either way).
-        if (RenderingEnabled)
+        if (render)
         {
-            MorphRenderer.AddExcelPages(deterministic ?? sourceStream, targets);
+            conversion.AddImages(MorphRenderer.RenderExcel(deterministic ?? sourceStream));
         }
 #endif
 
-        return new(info, targets);
+        return conversion.Build();
     }
 
     internal static List<SheetInfo> BuildSheetInfos(WorkbookPart workbookPart)
@@ -869,7 +876,7 @@ public static partial class VerifyOpenXml
         return value;
     }
 
-    static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
+    static IEnumerable<(StringBuilder Csv, string Name)> Convert(SpreadsheetDocument document)
     {
         var workbookPart = document.WorkbookPart!;
         var counter = Counter.Current;

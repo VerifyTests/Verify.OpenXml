@@ -43,20 +43,25 @@ Key files:
 - **VerifyOpenXml_Excel.cs** — Excel conversion (stream→CSV, metadata extraction, deterministic binary output)
 - **VerifyOpenXml_Word.cs** — Word conversion (text/font/property extraction, deterministic binary output)
 - **VerifyOpenXml_Powerpoint.cs** — Powerpoint conversion
-- **MorphRenderer.cs** — Backend probing and the shared PNG page targets (`net10.0` only)
+- **MorphRenderer.cs** — Backend probing and the rendering of every page to PNG (`net10.0` only)
 - **Info.cs / WordInfo.cs** — Data models for extracted document metadata
 
-Each stream converter returns a `ConversionResult` containing:
-1. An info object (metadata serialized to JSON)
-2. Text targets (CSV for Excel sheets, TXT for Word/Powerpoint text)
-3. A deterministic binary copy of the original document (via `DeterministicIoPackaging`)
-4. On `net10.0` with a Morph backend present, one PNG per rendered page
+Each stream converter builds its `ConversionResult` with Verify's `PagedConversion`:
+1. `Info` — the metadata of the document (`ExcelInfo`, `WordInfo`, `PowerpointInfo`), written under `Document` in the info file
+2. `Source` — a deterministic binary copy of the original document (via `DeterministicIoPackaging`). Naming it as the source is what ties the pages, the sheets and the info file to the document, for comparison and for the diff tool
+3. The text — `Text` for a Word document, which is read whole, and the `text` of `AddPage` for each slide of a presentation
+4. `AddDerived` — a CSV for each Excel sheet, named for the sheet even when it is the only one
+5. On `net10.0` with a Morph backend present, a PNG per rendered page — `AddImages` for Word and Excel, the `image` of `AddPage` for Powerpoint
 
-All three document types render. Morph exposes a separate converter per type (`DocumentConverter`, `ExcelConverter`, `PowerPointConverter`) with no common base, so `MorphRenderer` captures each one's `ConvertToImageData` as a delegate and shares a single `AddPages`. Rendering reads the deterministic package when one was built and the raw clone otherwise — `DeterministicPackage` only normalizes zip container metadata, so the pixels are the same either way. This is why each converter clones unconditionally rather than only inside the `IsTargetExcluded` branch.
+`PagedConversion` names the pages (`page_0001`), places the text, and writes the info file in the shape every paged document has (`Document`, `PageCount`, `Text`, `Pages`). What is produced is decided by Verify's settings, read through it, not by an option of this plugin: `PageText` (in the info, a file of its own, or none), `PagesToInclude`, `ExcludeDerivedTargets("png")` / `("csv")` and `ExcludeTargets("docx")`. Each converter asks before doing the work — `IncludeText`, `RenderingEnabled(conversion)`, `IsDerivedTargetExcluded("csv")`, `IsTargetExcluded` — so nothing left out is produced. The global forms of those settings are tested in a separate project, `src/StaticSettingsTests/` (no text, no rendered pages).
 
-A page is not a sheet or a slide by definition: Word paginates by layout, Powerpoint emits one page per slide, and Excel paginates by *print* layout — a long sheet spills onto several pages, and each visible sheet starts a new one.
+All three document types render. Morph exposes a separate converter per type (`DocumentConverter`, `ExcelConverter`, `PowerPointConverter`) with no common base, so `MorphRenderer` captures each one's `ConvertToImageData` as a delegate and shares a single `Render`. Morph draws every page in one call, so `PagesToInclude` saves no rendering: the pages it leaves out are drawn and then dropped. Morph can limit a render to a range (`ImageExportOptions.Pages`), but Verify gives a converter a delegate to ask about one page at a time, which cannot be turned into a range without the page count, and for Word and Excel that is only known once the pages are laid out. Rendering reads the deterministic package when one was built and the raw clone otherwise — `DeterministicPackage` only normalizes zip container metadata, so the pixels are the same either way. This is why each converter clones unconditionally rather than only inside the `IsTargetExcluded` branch.
 
-Document text is a target only — never also a property on the info object, or it lands in two snapshot files.
+A page is not a sheet or a slide by definition: Word paginates by layout, Powerpoint emits one page per slide, and Excel paginates by *print* layout — a long sheet spills onto several pages, and each visible sheet starts a new one. So `PageCount` is known without rendering only for Powerpoint, where it is the slide count. For Word and Excel it is set by `AddImages`, and is in the info file only when the pages were rendered — which is one way the info files of `Tests.Skia` and `Tests.ImageSharp` differ from those of `Verify.OpenXml.Tests`.
+
+Slides are numbered in `p:sldIdLst` order (`GetSlides`), the order a deck is shown in, not in `PresentationPart.SlideParts` order, which is the order the parts were related in. Morph renders in `p:sldIdLst` order too, and `ConvertPowerpoint` pairs the image and the text of a slide by its number, so the two have to agree. `PowerpointPagesTests` holds that in place with a deck whose slides have been moved.
+
+Document text goes to `PagedConversion` only — never also a property on the `Info` object, or it lands in the info file twice.
 
 Word text extraction walks the body in document order and treats content controls (`w:sdt` — `SdtBlock`, `SdtRun`, `SdtRow`, `SdtCell`) as transparent, emitting their content as Word displays it.
 
@@ -67,6 +72,8 @@ The deterministic binary output is critical — `DeterministicIoPackaging` ensur
 - **ModuleInitializer.cs** — Calls `VerifyOpenXml.Initialize()` via `[ModuleInitializer]`
 - **Samples.cs** — Core tests verifying Excel/Word files, streams, and document objects
 - Verified snapshot files (`.verified.txt`, `.verified.csv`, `.verified.xlsx`, `.verified.docx`) live alongside tests
+
+The module initializers turn on `VerifierSettings.Inline(maxLines: 10, ...)`, but no document test carries a `.Snapshot(...)` literal, and none should. Under that switch Verify never inlines the info file of a document, and a literal in `Samples.cs` could not be shared by the three test projects anyway, whose info files differ by `PageCount`.
 
 `sample.pptx` is hand-built rather than authored in PowerPoint, and two things about it are load-bearing:
 
@@ -86,10 +93,10 @@ These exist to exercise the two Morph PNG-rendering backends. Each references on
 
 ### Regenerating snapshots
 
-Two Verify behaviours make binary (`.docx`/`.xlsx`/`.pptx`) snapshots easy to get wrong:
+Two Verify behaviours make snapshots easy to get wrong:
 
-- They are compared through a comparer, not by raw bytes, so a stale verified package that is merely *equivalent* keeps passing and can sit in the repo for a long time.
-- The binary targets set `BypassComparersForSubsequentOnDifference`, so as soon as an earlier text target differs, the binary targets skip comparison and are written out as `.received.*` regardless. A blanket `mv *.received.* *.verified.*` will silently rewrite binary snapshots that were never actually compared.
+- The binary packages (`.docx`/`.xlsx`/`.pptx`) are compared through a comparer, not by raw bytes, so a stale verified package that is merely *equivalent* keeps passing and can sit in the repo for a long time.
+- The package is the source of its conversion (`PagedConversion.Source`), so Verify compares it first, and when it differs the info file, the pages and the sheets derived from it skip their comparers and are compared exactly. They are then written out as `.received.*` wherever a byte differs. A blanket `mv *.received.* *.verified.*` will silently rewrite snapshots that a comparer would have passed.
 
 So after changing a converter, delete the affected `.verified.*` in **all three** test directories, regenerate, and then run the suite twice — the second run is what proves the accepted output is reproducible rather than an artifact of the transitional state.
 

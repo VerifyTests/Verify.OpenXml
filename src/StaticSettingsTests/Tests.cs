@@ -1,4 +1,4 @@
-// Initialized with only OpenXmlOutputs.Csv, so the docx has no txt target and no png pages.
+// Initialized with PageText(None) and ExcludeDerivedTargets("png"), so the docx has no text and no png pages.
 public class Tests
 {
     [Test]

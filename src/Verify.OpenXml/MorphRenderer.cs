@@ -63,29 +63,26 @@ static class MorphRenderer
         return (T) Activator.CreateInstance(type)!;
     }
 
-    public static void AddWordPages(Stream docx, List<Target> targets) =>
-        AddPages(word, docx, targets);
+    // Each renders every page, in page order. Only called once Enabled has been checked, which is
+    // what says the renderer is there.
+    public static IReadOnlyList<byte[]> RenderWord(Stream docx) =>
+        Render(word!, docx);
 
-    public static void AddExcelPages(Stream xlsx, List<Target> targets) =>
-        AddPages(excel, xlsx, targets);
+    public static IReadOnlyList<byte[]> RenderExcel(Stream xlsx) =>
+        Render(excel!, xlsx);
 
-    public static void AddPowerpointPages(Stream pptx, List<Target> targets) =>
-        AddPages(powerpoint, pptx, targets);
+    public static IReadOnlyList<byte[]> RenderPowerpoint(Stream pptx) =>
+        Render(powerpoint!, pptx);
 
-    static void AddPages(Renderer? render, Stream package, List<Target> targets)
+    static IReadOnlyList<byte[]> Render(Renderer render, Stream package)
     {
-        if (render == null)
-        {
-            return;
-        }
-
         package.Position = 0;
         using var copy = new MemoryStream();
         package.CopyTo(copy);
         package.Position = 0;
         copy.Position = 0;
 
-        var pages = render(
+        return render(
             copy,
             new()
             {
@@ -94,10 +91,6 @@ static class MorphRenderer
                 DefaultFont = VerifyOpenXml.DefaultFont,
                 UseLetterPageSize = VerifyOpenXml.UseLetterPageSize
             });
-        foreach (var page in pages)
-        {
-            targets.Add(new("png", new MemoryStream(page)));
-        }
     }
 }
 #endif

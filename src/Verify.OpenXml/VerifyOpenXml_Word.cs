@@ -24,57 +24,55 @@ public static partial class VerifyOpenXml
 
     static ConversionResult ConvertWord(WordprocessingDocument document, IReadOnlyDictionary<string, object> settings)
     {
-        var info = GetWordInfo(document);
-        var text = outputs.HasFlag(OpenXmlOutputs.Text) ? GetWordDocumentText(document) : null;
+        // Names the pages, places the text, and says which of them the verification wants
+        var conversion = new PagedConversion(settings)
+        {
+            Info = GetWordInfo(document)
+        };
+
+        // The text is read from the body, which knows nothing of where a page ends, so it is the
+        // text of the document rather than of each page.
+        if (conversion.IncludeText)
+        {
+            conversion.Text(GetWordDocumentText(document));
+        }
 
         // Building the deterministic docx is expensive, so skip it when the docx target is excluded.
         var buildDeterministic = !settings.IsTargetExcluded("docx");
+        var render = RenderingEnabled(conversion);
 
         using var sourceStream = new MemoryStream();
         if (buildDeterministic ||
-            RenderingEnabled)
+            render)
         {
             document.Clone(sourceStream);
             sourceStream.Position = 0;
         }
 
-        List<Target> targets = [];
         // ReSharper disable once TooWideLocalVariableScope
         // ReSharper disable once RedundantAssignment
         Stream? deterministic = null;
         if (buildDeterministic)
         {
             deterministic = DeterministicPackage.Convert(sourceStream);
-            targets.Add(
-                new("docx", deterministic)
-                {
-                    BypassComparersForSubsequentOnDifference = true
-                });
-        }
-
-        // The text is its own target, so it is deliberately absent from the info. Carrying it in both
-        // wrote the document text to two snapshot files.
-        if (!string.IsNullOrWhiteSpace(text))
-        {
-            // ReSharper disable once RedundantSuppressNullableWarningExpression
-            targets.Add(new("txt", text!));
+            conversion.Source(new("docx", deterministic));
         }
 
 #if NET10_0_OR_GREATER
         // Rendering needs a package stream. Reuse the deterministic docx when built; otherwise render
         // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
         // so the rendered pixels are the same either way).
-        if (RenderingEnabled)
+        if (render)
         {
-            MorphRenderer.AddWordPages(deterministic ?? sourceStream, targets);
+            conversion.AddImages(MorphRenderer.RenderWord(deterministic ?? sourceStream));
         }
 #endif
 
-        return new(info, targets);
+        return conversion.Build();
     }
 
     /// <summary>
-    /// Document metadata, or null when the document carries none — so no empty info snapshot is written.
+    /// Document metadata, or null when the document carries none — so no empty <c>Document</c> is written.
     /// </summary>
     static WordInfo? GetWordInfo(WordprocessingDocument document)
     {

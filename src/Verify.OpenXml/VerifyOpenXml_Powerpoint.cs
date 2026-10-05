@@ -1,5 +1,6 @@
 using PText = DocumentFormat.OpenXml.Drawing.Text;
 using PParagraph = DocumentFormat.OpenXml.Drawing.Paragraph;
+using SlideId = DocumentFormat.OpenXml.Presentation.SlideId;
 
 namespace VerifyTests;
 
@@ -16,87 +17,126 @@ public static partial class VerifyOpenXml
 
     static ConversionResult ConvertPowerpoint(PresentationDocument document, IReadOnlyDictionary<string, object> settings)
     {
-        var info = GetPowerpointInfo(document);
-        var text = outputs.HasFlag(OpenXmlOutputs.Text) ? GetPowerpointText(document) : null;
+        // Names the pages, places their text, and says which pages and which of their outputs the
+        // verification wants
+        var conversion = new PagedConversion(settings)
+        {
+            Info = GetPowerpointInfo(document)
+        };
+        var slides = GetSlides(document);
 
         // Building the deterministic pptx is expensive, so skip it when the pptx target is excluded.
         // The text and info are extracted from the document, so they are unaffected.
         var buildDeterministic = !settings.IsTargetExcluded("pptx");
+        var render = RenderingEnabled(conversion);
 
         using var sourceStream = new MemoryStream();
         if (buildDeterministic ||
-            RenderingEnabled)
+            render)
         {
             document.Clone(sourceStream);
             sourceStream.Position = 0;
         }
 
-        List<Target> targets = [];
         // ReSharper disable once TooWideLocalVariableScope
         // ReSharper disable once RedundantAssignment
         Stream? deterministic = null;
         if (buildDeterministic)
         {
             deterministic = DeterministicPackage.Convert(sourceStream);
-            targets.Add(
-                new("pptx", deterministic)
-                {
-                    BypassComparersForSubsequentOnDifference = true
-                });
+            conversion.Source(new("pptx", deterministic));
         }
 
-        // The text is its own target, so it is deliberately absent from the info. Carrying it in both
-        // wrote the slide text to two snapshot files.
-        if (!string.IsNullOrWhiteSpace(text))
-        {
-            // ReSharper disable once RedundantSuppressNullableWarningExpression
-            targets.Add(new("txt", text!));
-        }
-
+        IReadOnlyList<byte[]>? images = null;
 #if NET10_0_OR_GREATER
         // Rendering needs a package stream. Reuse the deterministic pptx when built; otherwise render
         // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
         // so the rendered pixels are the same either way).
-        if (RenderingEnabled)
+        if (render)
         {
-            MorphRenderer.AddPowerpointPages(deterministic ?? sourceStream, targets);
+            images = MorphRenderer.RenderPowerpoint(deterministic ?? sourceStream);
         }
 #endif
 
-        return new(info, targets);
+        // A page is a slide. The renderer draws every slide, in the same order as GetSlides, so the
+        // image and the text of a slide are paired by its number.
+        var includeText = conversion.IncludeText;
+        foreach (var number in conversion.Pages(slides.Count))
+        {
+            Stream? image = null;
+            if (images != null)
+            {
+                image = new MemoryStream(images[number - 1]);
+            }
+
+            string? text = null;
+            if (includeText)
+            {
+                text = GetSlideText(slides[number - 1]);
+            }
+
+            conversion.AddPage(number, image, text);
+        }
+
+        return conversion.Build();
     }
 
-    internal static PowerpointInfo GetPowerpointInfo(PresentationDocument document) =>
-        new()
-        {
-            Properties = GetPowerpointProperties(document),
-            SlideCount = document.PresentationPart?.SlideParts.Count() ?? 0
-        };
-
-    internal static string? GetPowerpointText(PresentationDocument document)
+    /// <summary>
+    /// Document metadata, or null when the presentation carries none — so no empty <c>Document</c> is written.
+    /// </summary>
+    internal static PowerpointInfo? GetPowerpointInfo(PresentationDocument document)
     {
-        var presentationPart = document.PresentationPart;
-        if (presentationPart == null)
+        var properties = GetPowerpointProperties(document);
+        if (properties == null)
         {
             return null;
         }
 
-        var builder = new StringBuilder();
-        foreach (var slidePart in presentationPart.SlideParts)
+        return new()
         {
-            var before = builder.Length;
-            if (before > 0)
-            {
-                builder.Append("\n---\n");
-            }
+            Properties = properties
+        };
+    }
 
-            if (!AppendSlideText(builder, slidePart))
+    /// <summary>
+    /// Slides in presentation order. <c>p:sldIdLst</c> is authoritative: it is the order the slides
+    /// are shown and rendered in, whereas <c>PresentationPart.SlideParts</c> is the order the parts
+    /// were related in, which reordering a deck does not change.
+    /// </summary>
+    internal static List<SlidePart> GetSlides(PresentationDocument document)
+    {
+        var slides = new List<SlidePart>();
+        var presentationPart = document.PresentationPart;
+        var slideIds = presentationPart?.Presentation?.SlideIdList;
+        if (presentationPart == null ||
+            slideIds == null)
+        {
+            return slides;
+        }
+
+        foreach (var slideId in slideIds.Elements<SlideId>())
+        {
+            var relationshipId = slideId.RelationshipId?.Value;
+            if (relationshipId != null &&
+                presentationPart.TryGetPartById(relationshipId, out var part) &&
+                part is SlidePart slidePart)
             {
-                builder.Length = before;
+                slides.Add(slidePart);
             }
         }
 
-        return builder.Length > 0 ? builder.ToString() : null;
+        return slides;
+    }
+
+    internal static string? GetSlideText(SlidePart slidePart)
+    {
+        var builder = new StringBuilder();
+        if (AppendSlideText(builder, slidePart))
+        {
+            return builder.ToString();
+        }
+
+        return null;
     }
 
     internal static Dictionary<string, object?>? GetPowerpointProperties(PresentationDocument document) =>
@@ -138,6 +178,5 @@ public static partial class VerifyOpenXml
 
 class PowerpointInfo
 {
-    public Dictionary<string, object?>? Properties { get; init; }
-    public required int SlideCount { get; init; }
+    public required Dictionary<string, object?> Properties { get; init; }
 }

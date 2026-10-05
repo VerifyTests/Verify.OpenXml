@@ -1,0 +1,18 @@
+﻿{
+  Document: {
+    Properties: {
+      Title: Sample Presentation
+    }
+  },
+  PageCount: 3,
+  Pages: [
+    {
+      Number: 1,
+      Text: First
+    },
+    {
+      Number: 2,
+      Text: Second
+    }
+  ]
+}

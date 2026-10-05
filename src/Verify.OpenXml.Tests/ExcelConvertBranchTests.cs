@@ -22,6 +22,16 @@ public class ExcelConvertBranchTests
         return Verify(document);
     }
 
+    // With the csv of each sheet excluded the sheets are not read at all, which leaves the
+    // workbook and its info.
+    [Test]
+    public Task SheetsExcluded()
+    {
+        using var document = CreateDocument();
+        return Verify(document)
+            .ExcludeDerivedTargets("csv");
+    }
+
     static SpreadsheetDocument CreateBooleanVariantsDocument(IReadOnlyList<string> variants)
     {
         var document = SpreadsheetDocument.Create(new MemoryStream(), SpreadsheetDocumentType.Workbook);
