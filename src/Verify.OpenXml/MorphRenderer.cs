@@ -63,41 +63,58 @@ static class MorphRenderer
         return (T) Activator.CreateInstance(type)!;
     }
 
-    public static void AddWordPages(Stream docx, List<Target> targets) =>
-        AddPages(word, docx, targets);
+    // Each renders every page, in page order. Only called once Enabled has been checked, which is
+    // what says the renderer is there.
+    public static IReadOnlyList<byte[]> RenderWord(Stream docx) =>
+        Render(word!, docx);
 
-    public static void AddExcelPages(Stream xlsx, List<Target> targets) =>
-        AddPages(excel, xlsx, targets);
+    // A sheet is drawn whole, as the one image, rather than as it prints. So a page is a sheet,
+    // however long it is and whatever paper its page setup names.
+    public static IReadOnlyList<byte[]> RenderExcel(Stream xlsx) =>
+        Render(
+            excel!,
+            xlsx,
+            Options() with
+            {
+                SheetPagination = SheetPagination.OnePagePerSheet
+            });
 
-    public static void AddPowerpointPages(Stream pptx, List<Target> targets) =>
-        AddPages(powerpoint, pptx, targets);
+    public static IReadOnlyList<byte[]> RenderPowerpoint(Stream pptx) =>
+        Render(powerpoint!, pptx);
 
-    static void AddPages(Renderer? render, Stream package, List<Target> targets)
+    // The text of each page of a docx, in page order. Laid out with the options the pages are drawn
+    // with, so the text of a page is the text drawn on it.
+    public static IReadOnlyList<string> WordPageTexts(Stream docx)
     {
-        if (render == null)
-        {
-            return;
-        }
+        docx.Position = 0;
+        using var copy = new MemoryStream();
+        docx.CopyTo(copy);
+        docx.Position = 0;
+        copy.Position = 0;
+        return DocumentConverter.GetPageTexts(copy, Options());
+    }
 
+    static IReadOnlyList<byte[]> Render(Renderer render, Stream package) =>
+        Render(render, package, Options());
+
+    static IReadOnlyList<byte[]> Render(Renderer render, Stream package, ImageExportOptions options)
+    {
         package.Position = 0;
         using var copy = new MemoryStream();
         package.CopyTo(copy);
         package.Position = 0;
         copy.Position = 0;
 
-        var pages = render(
-            copy,
-            new()
-            {
-                DeterministicRendering = true,
-                FontDirectory = VerifyOpenXml.FontDirectory,
-                DefaultFont = VerifyOpenXml.DefaultFont,
-                UseLetterPageSize = VerifyOpenXml.UseLetterPageSize
-            });
-        foreach (var page in pages)
-        {
-            targets.Add(new("png", new MemoryStream(page)));
-        }
+        return render(copy, options);
     }
+
+    static ImageExportOptions Options() =>
+        new()
+        {
+            DeterministicRendering = true,
+            FontDirectory = VerifyOpenXml.FontDirectory,
+            DefaultFont = VerifyOpenXml.DefaultFont,
+            UseLetterPageSize = VerifyOpenXml.UseLetterPageSize
+        };
 }
 #endif

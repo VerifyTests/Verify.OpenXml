@@ -20,6 +20,10 @@
       <LinkBase>Tests\</LinkBase>
       <Link>Tests\ExcelDocumentPropertiesTests.cs</Link>
     </Compile>
+    <Compile Include="..\Verify.OpenXml.Tests\ExcelPagesTests.cs">
+      <LinkBase>Tests\</LinkBase>
+      <Link>Tests\ExcelPagesTests.cs</Link>
+    </Compile>
     <Compile Include="..\Verify.OpenXml.Tests\ExcelProtectionTests.cs">
       <LinkBase>Tests\</LinkBase>
       <Link>Tests\ExcelProtectionTests.cs</Link>
@@ -27,6 +31,10 @@
     <Compile Include="..\Verify.OpenXml.Tests\ExcelValidationTests.cs">
       <LinkBase>Tests\</LinkBase>
       <Link>Tests\ExcelValidationTests.cs</Link>
+    </Compile>
+    <Compile Include="..\Verify.OpenXml.Tests\PowerpointPagesTests.cs">
+      <LinkBase>Tests\</LinkBase>
+      <Link>Tests\PowerpointPagesTests.cs</Link>
     </Compile>
     <Compile Include="..\Verify.OpenXml.Tests\PrefixedNamespaceTests.cs">
       <LinkBase>Tests\</LinkBase>
@@ -39,6 +47,10 @@
     <Compile Include="..\Verify.OpenXml.Tests\VerifyChecksTests.cs">
       <LinkBase>Tests\</LinkBase>
       <Link>Tests\VerifyChecksTests.cs</Link>
+    </Compile>
+    <Compile Include="..\Verify.OpenXml.Tests\WordPagesTests.cs">
+      <LinkBase>Tests\</LinkBase>
+      <Link>Tests\WordPagesTests.cs</Link>
     </Compile>
     <None Include="..\Verify.OpenXml.Tests\sample.docx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -19,7 +19,14 @@ public static partial class VerifyOpenXml
 
     static ConversionResult ConvertExcel(SpreadsheetDocument document, IReadOnlyDictionary<string, object> settings)
     {
-        var sheets = outputs.HasFlag(OpenXmlOutputs.Csv) ? Convert(document).ToList() : [];
+        // Reading the sheets is the expensive part of a workbook with no rendering, so skip it when
+        // the verification excludes them, with ExcludeDerivedTargets("csv").
+        List<(StringBuilder Csv, string Name)> sheets = [];
+        if (!settings.IsDerivedTargetExcluded("csv"))
+        {
+            sheets = Convert(document, settings).ToList();
+        }
+
         var workbookPart = document.WorkbookPart!;
 
         // Extract document properties. Creator, LastModifiedBy, Created and Modified are deliberately
@@ -36,6 +43,7 @@ public static partial class VerifyOpenXml
         {
             Sheets = sheetInfos,
             WorksheetCount = workbookPart.Workbook!.Sheets!.Elements<Sheet>().Count(),
+            HiddenSheets = HiddenSheets(workbookPart),
             Title = packageProperties.Title,
             Subject = packageProperties.Subject,
             Keywords = packageProperties.Keywords,
@@ -53,53 +61,53 @@ public static partial class VerifyOpenXml
             Protection = BuildWorkbookProtectionInfo(workbookPart)
         };
 
+        // Names the pages, and says which of them the verification wants. A workbook has pages only
+        // once it is rendered: one for each sheet, hidden or not, drawn whole.
+        var conversion = new PagedConversion(settings)
+        {
+            Info = info
+        };
+
         // Building the deterministic xlsx is expensive, so skip it when the xlsx target is excluded.
         // The csv sheets and info are extracted from the document, so they are unaffected.
         var buildDeterministic = !settings.IsTargetExcluded("xlsx");
+        var render = RenderingEnabled(conversion);
 
         using var sourceStream = new MemoryStream();
         if (buildDeterministic ||
-            RenderingEnabled)
+            render)
         {
             document.Clone(sourceStream);
             sourceStream.Position = 0;
         }
 
-        List<Target> targets = [];
         // ReSharper disable once TooWideLocalVariableScope
         // ReSharper disable once RedundantAssignment
         Stream? deterministic = null;
         if (buildDeterministic)
         {
             deterministic = DeterministicPackage.Convert(sourceStream);
-            targets.Add(
-                new("xlsx", deterministic)
-                {
-                    BypassComparersForSubsequentOnDifference = true
-                });
+            conversion.Source(new("xlsx", deterministic));
         }
 
-        if (sheets.Count == 1)
+        // Named for its sheet even when it is the only one, so that a second sheet adds a file rather
+        // than renaming the first.
+        foreach (var (csv, name) in sheets)
         {
-            var (csv, _) = sheets[0];
-            targets.Add(new("csv", csv));
-        }
-        else if (sheets.Count > 1)
-        {
-            targets.AddRange(sheets.Select(_ => new Target("csv", _.Csv, _.Name)));
+            conversion.AddDerived(new("csv", csv, name));
         }
 
 #if NET10_0_OR_GREATER
         // Rendering needs a package stream. Reuse the deterministic xlsx when built; otherwise render
         // from the raw clone (DeterministicPackage only normalizes zip container metadata, not content,
         // so the rendered pixels are the same either way).
-        if (RenderingEnabled)
+        if (render)
         {
-            MorphRenderer.AddExcelPages(deterministic ?? sourceStream, targets);
+            conversion.AddImages(MorphRenderer.RenderExcel(WithEverySheetVisible(document, deterministic ?? sourceStream)));
         }
 #endif
 
-        return new(info, targets);
+        return conversion.Build();
     }
 
     internal static List<SheetInfo> BuildSheetInfos(WorkbookPart workbookPart)
@@ -869,13 +877,23 @@ public static partial class VerifyOpenXml
         return value;
     }
 
-    static IEnumerable<(StringBuilder Csv, string? Name)> Convert(SpreadsheetDocument document)
+    // A page is a sheet, numbered in tab order, hidden or not, which is how they are drawn. So the
+    // sheet of a page PagesToInclude leaves out is not read, and its csv goes with its image,
+    // whether or not there is a renderer to draw one.
+    static IEnumerable<(StringBuilder Csv, string Name)> Convert(SpreadsheetDocument document, IReadOnlyDictionary<string, object> settings)
     {
         var workbookPart = document.WorkbookPart!;
         var counter = Counter.Current;
+        var page = 0;
 
         foreach (var sheet in workbookPart.Workbook!.Sheets!.Elements<Sheet>())
         {
+            page++;
+            if (!settings.IsPageIncluded(page))
+            {
+                continue;
+            }
+
             var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id!);
 
             var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable?.Elements<SharedStringItem>().ToList();
@@ -914,6 +932,57 @@ public static partial class VerifyOpenXml
             yield return (builder, sheet.Name!.Value!);
         }
     }
+
+    // Hidden so that Excel can unhide it, or so that only code can
+    static bool IsHidden(Sheet sheet)
+    {
+        var state = sheet.State?.Value;
+        return state == SheetStateValues.Hidden ||
+               state == SheetStateValues.VeryHidden;
+    }
+
+    static List<string>? HiddenSheets(WorkbookPart workbookPart)
+    {
+        var hidden = workbookPart.Workbook!.Sheets!.Elements<Sheet>()
+            .Where(IsHidden)
+            .Select(_ => _.Name!.Value!)
+            .ToList();
+        if (hidden.Count == 0)
+        {
+            return null;
+        }
+
+        return hidden;
+    }
+
+#if NET10_0_OR_GREATER
+    // The renderer draws a workbook as it prints, and a hidden sheet is not printed. Every sheet is
+    // a page here, so a workbook with a hidden one is drawn from a copy in which none is. The copy
+    // is only for drawing: the workbook that is verified is as it was.
+    static Stream WithEverySheetVisible(SpreadsheetDocument document, Stream package)
+    {
+        var sheets = document.WorkbookPart!.Workbook!.Sheets!.Elements<Sheet>();
+        if (!sheets.Any(IsHidden))
+        {
+            return package;
+        }
+
+        package.Position = 0;
+        var copy = new MemoryStream();
+        package.CopyTo(copy);
+        package.Position = 0;
+
+        using (var workbook = SpreadsheetDocument.Open(copy, true))
+        {
+            foreach (var sheet in workbook.WorkbookPart!.Workbook!.Sheets!.Elements<Sheet>())
+            {
+                sheet.State = null;
+            }
+        }
+
+        return copy;
+    }
+#endif
 
     static string GetCellValue(Cell cell, WorkbookPart workbookPart, List<SharedStringItem>? sharedStringItems, Counter counter)
     {

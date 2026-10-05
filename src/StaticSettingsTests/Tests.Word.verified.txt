@@ -1,6 +1,8 @@
 ﻿{
-  Properties: {
-    Subject: Test Subject,
-    Title: Sample Document
+  Document: {
+    Properties: {
+      Subject: Test Subject,
+      Title: Sample Document
+    }
   }
 }

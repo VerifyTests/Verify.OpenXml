@@ -1,31 +1,34 @@
 ﻿{
-  Sheets: [
-    {
-      Name: Sheet1,
-      Columns: [
-        {
-          Name: Id,
-          Metadata: {
-            foo: bar
+  Document: {
+    Sheets: [
+      {
+        Name: Sheet1,
+        Columns: [
+          {
+            Name: Id,
+            Metadata: {
+              foo: bar
+            },
+            ContainsRichText: false,
+            RequiredHighlight: false
           },
-          ContainsRichText: false,
-          RequiredHighlight: false
-        },
-        {
-          Name: Name,
-          Metadata: {
-            baz: qux
+          {
+            Name: Name,
+            Metadata: {
+              baz: qux
+            },
+            ContainsRichText: false,
+            RequiredHighlight: false
           },
-          ContainsRichText: false,
-          RequiredHighlight: false
-        },
-        {
-          Name: Notes,
-          ContainsRichText: false,
-          RequiredHighlight: false
-        }
-      ]
-    }
-  ],
-  WorksheetCount: 1
+          {
+            Name: Notes,
+            ContainsRichText: false,
+            RequiredHighlight: false
+          }
+        ]
+      }
+    ],
+    WorksheetCount: 1
+  },
+  PageCount: 1
 }

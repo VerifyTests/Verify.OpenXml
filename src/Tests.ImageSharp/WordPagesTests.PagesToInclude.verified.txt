@@ -1,0 +1,23 @@
+﻿{
+  Document: {
+    Properties: {
+      Subject: Test Subject,
+      Title: Sample Document
+    }
+  },
+  PageCount: 3,
+  Pages: [
+    {
+      Number: 1,
+      Text:
+Hello World! This is a sample Word document.
+This is the second paragraph with some more text.
+    },
+    {
+      Number: 2,
+      Text:
+Second page, paragraph
+Second page, row	cell
+    }
+  ]
+}

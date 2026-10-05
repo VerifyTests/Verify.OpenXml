@@ -33,41 +33,88 @@ public class PowerpointUnitTests
     }
 
     [Test]
-    public async Task GetPowerpointInfo_NoSlides()
+    public async Task GetPowerpointInfo_NoProperties_ReturnsNull()
     {
         using var doc = CreateEmptyDoc();
-        var info = VerifyOpenXml.GetPowerpointInfo(doc);
-        await Assert.That(info.SlideCount).IsEqualTo(0);
-        await Assert.That(VerifyOpenXml.GetPowerpointText(doc)).IsNull();
+        await Assert.That(VerifyOpenXml.GetPowerpointInfo(doc)).IsNull();
     }
 
     [Test]
-    public async Task GetPowerpointInfo_WithSlidesAndText()
+    public async Task GetPowerpointInfo_Populated()
+    {
+        using var doc = CreateEmptyDoc();
+        doc.PackageProperties.Title = "T";
+
+        var info = VerifyOpenXml.GetPowerpointInfo(doc)!;
+        await Assert.That(info.Properties["Title"]).IsEqualTo("T");
+    }
+
+    [Test]
+    public async Task GetSlides_NoSlides()
+    {
+        using var doc = CreateEmptyDoc();
+        await Assert.That(VerifyOpenXml.GetSlides(doc).Count).IsZero();
+    }
+
+    [Test]
+    public async Task GetSlides_WithSlidesAndText()
     {
         using var doc = CreateEmptyDoc();
         var presPart = doc.PresentationPart!;
         AddSlide(presPart, "First");
         AddSlide(presPart, "Second");
 
-        var info = VerifyOpenXml.GetPowerpointInfo(doc);
-        await Assert.That(info.SlideCount).IsEqualTo(2);
-
-        var text = VerifyOpenXml.GetPowerpointText(doc);
-        await Assert.That(text).Contains("First");
-        await Assert.That(text).Contains("Second");
-        await Assert.That(text).Contains("---");
+        var slides = VerifyOpenXml.GetSlides(doc);
+        await Assert.That(slides.Count).IsEqualTo(2);
+        await Assert.That(VerifyOpenXml.GetSlideText(slides[0])).IsEqualTo("First");
+        await Assert.That(VerifyOpenXml.GetSlideText(slides[1])).IsEqualTo("Second");
     }
 
+    // p:sldIdLst is the order the slides are shown in, and so the order of the rendered pages. The
+    // parts stay in the order they were added, which moving a slide does not change.
     [Test]
-    public async Task GetPowerpointInfo_SlideWithNoText_TextIsNull()
+    public async Task GetSlides_InPresentationOrder()
     {
         using var doc = CreateEmptyDoc();
         var presPart = doc.PresentationPart!;
-        AddEmptySlide(presPart);
+        AddSlide(presPart, "First");
+        AddSlide(presPart, "Second");
 
-        var info = VerifyOpenXml.GetPowerpointInfo(doc);
-        await Assert.That(info.SlideCount).IsEqualTo(1);
-        await Assert.That(VerifyOpenXml.GetPowerpointText(doc)).IsNull();
+        var slideIds = presPart.Presentation!.SlideIdList!;
+        var moved = slideIds.GetFirstChild<SlideId>()!;
+        moved.Remove();
+        slideIds.Append(moved);
+
+        var slides = VerifyOpenXml.GetSlides(doc);
+        await Assert.That(slides.Count).IsEqualTo(2);
+        await Assert.That(VerifyOpenXml.GetSlideText(slides[0])).IsEqualTo("Second");
+        await Assert.That(VerifyOpenXml.GetSlideText(slides[1])).IsEqualTo("First");
+    }
+
+    // A slide part p:sldIdLst does not list is not in the deck: PowerPoint does not show it, and
+    // the renderer does not draw it.
+    [Test]
+    public async Task GetSlides_UnlistedSlideIsNotASlide()
+    {
+        using var doc = CreateEmptyDoc();
+        var presPart = doc.PresentationPart!;
+        AddSlide(presPart, "Listed");
+        presPart.AddNewPart<SlidePart>().Slide = BuildSlide();
+
+        var slides = VerifyOpenXml.GetSlides(doc);
+        await Assert.That(slides.Count).IsEqualTo(1);
+        await Assert.That(VerifyOpenXml.GetSlideText(slides[0])).IsEqualTo("Listed");
+    }
+
+    [Test]
+    public async Task GetSlideText_SlideWithNoText_IsNull()
+    {
+        using var doc = CreateEmptyDoc();
+        var presPart = doc.PresentationPart!;
+        var slidePart = AddEmptySlide(presPart);
+
+        await Assert.That(VerifyOpenXml.GetSlides(doc).Count).IsEqualTo(1);
+        await Assert.That(VerifyOpenXml.GetSlideText(slidePart)).IsNull();
     }
 
     [Test]
@@ -134,6 +181,7 @@ public class PowerpointUnitTests
             new A.Paragraph(
                 new A.Run(new A.RunProperties(), new A.Text(_)))).ToArray();
         slidePart.Slide = BuildSlide(paragraphs);
+        ListSlide(presPart, slidePart);
         return slidePart;
     }
 
@@ -141,7 +189,20 @@ public class PowerpointUnitTests
     {
         var slidePart = presPart.AddNewPart<SlidePart>();
         slidePart.Slide = BuildSlide();
+        ListSlide(presPart, slidePart);
         return slidePart;
+    }
+
+    // What puts a slide in the deck. Slide ids start at 256.
+    static void ListSlide(PresentationPart presPart, SlidePart slidePart)
+    {
+        var slideIds = presPart.Presentation!.SlideIdList!;
+        slideIds.Append(
+            new SlideId
+            {
+                Id = (uint)(256 + slideIds.Count()),
+                RelationshipId = presPart.GetIdOfPart(slidePart)
+            });
     }
 
     static Slide BuildSlide(params OpenXmlElement[] paragraphs)

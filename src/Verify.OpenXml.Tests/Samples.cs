@@ -48,16 +48,7 @@
 
     [Test]
     public Task VerifyWord() =>
-        VerifyFile("sample.docx")
-            .Snapshot(
-                """
-                {
-                  Properties: {
-                    Subject: Test Subject,
-                    Title: Sample Document
-                  }
-                }
-                """);
+        VerifyFile("sample.docx");
 
     #endregion
 
@@ -68,16 +59,7 @@
     {
         await using var stream = File.OpenRead("sample.docx");
         using var reader = WordprocessingDocument.Open(stream, false);
-        await Verify(reader)
-            .Snapshot(
-                """
-                {
-                  Properties: {
-                    Subject: Test Subject,
-                    Title: Sample Document
-                  }
-                }
-                """);
+        await Verify(reader);
     }
 
     #endregion
@@ -88,16 +70,7 @@
     public Task VerifyWordStream()
     {
         var stream = new MemoryStream(File.ReadAllBytes("sample.docx"));
-        return Verify(stream, "docx")
-            .Snapshot(
-                """
-                {
-                  Properties: {
-                    Subject: Test Subject,
-                    Title: Sample Document
-                  }
-                }
-                """);
+        return Verify(stream, "docx");
     }
 
     #endregion
@@ -106,16 +79,7 @@
 
     [Test]
     public Task VerifyPowerpoint() =>
-        VerifyFile("sample.pptx")
-            .Snapshot(
-                """
-                {
-                  Properties: {
-                    Title: Sample Presentation
-                  },
-                  SlideCount: 1
-                }
-                """);
+        VerifyFile("sample.pptx");
 
     #endregion
 
@@ -134,16 +98,7 @@
     [Test]
     public Task ExcludeWord() =>
         VerifyFile("sample.docx")
-            .ExcludeTargets("docx")
-            .Snapshot(
-                """
-                {
-                  Properties: {
-                    Subject: Test Subject,
-                    Title: Sample Document
-                  }
-                }
-                """);
+            .ExcludeTargets("docx");
 
     #endregion
 
@@ -152,16 +107,7 @@
     [Test]
     public Task ExcludePowerpoint() =>
         VerifyFile("sample.pptx")
-            .ExcludeTargets("pptx")
-            .Snapshot(
-                """
-                {
-                  Properties: {
-                    Title: Sample Presentation
-                  },
-                  SlideCount: 1
-                }
-                """);
+            .ExcludeTargets("pptx");
 
     #endregion
 
@@ -172,16 +118,7 @@
     {
         await using var stream = File.OpenRead("sample.pptx");
         using var reader = PresentationDocument.Open(stream, false);
-        await Verify(reader)
-            .Snapshot(
-                """
-                {
-                  Properties: {
-                    Title: Sample Presentation
-                  },
-                  SlideCount: 1
-                }
-                """);
+        await Verify(reader);
     }
 
     #endregion
@@ -192,17 +129,27 @@
     public Task VerifyPowerpointStream()
     {
         var stream = new MemoryStream(File.ReadAllBytes("sample.pptx"));
-        return Verify(stream, "pptx")
-            .Snapshot(
-                """
-                {
-                  Properties: {
-                    Title: Sample Presentation
-                  },
-                  SlideCount: 1
-                }
-                """);
+        return Verify(stream, "pptx");
     }
+
+    #endregion
+
+    #region PageTextPerPage
+
+    [Test]
+    public Task PageTextPerPage() =>
+        VerifyFile("sample.pptx")
+            .PageText(PageTextPlacement.PerPage)
+            .ExcludeDerivedTargets("png");
+
+    #endregion
+
+    #region ExcludeRenderedPages
+
+    [Test]
+    public Task ExcludeRenderedPages() =>
+        VerifyFile("sample.docx")
+            .ExcludeDerivedTargets("png");
 
     #endregion
 }

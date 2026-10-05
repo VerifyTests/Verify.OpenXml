@@ -1,0 +1,14 @@
+﻿{
+  Document: {
+    Properties: {
+      Title: Sample Presentation
+    }
+  },
+  PageCount: 1,
+  Pages: [
+    {
+      Number: 1,
+      Text: Hello, PowerPoint!
+    }
+  ]
+}

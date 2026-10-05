@@ -12,7 +12,7 @@ Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of
 
 ### Excel (xlsx)
 
- * Converts workbooks to CSV format for each worksheet
+ * Converts each worksheet to CSV, in a file named for the worksheet
  * Extracts formulas and displays them alongside cell values
  * Captures document properties (title, subject, keywords, description, category, status, company, manager)
  * Captures custom document properties
@@ -33,11 +33,16 @@ Extends [Verify](https://github.com/VerifyTests/Verify) to allow verification of
 
 ### PowerPoint (pptx)
 
- * Extracts slide text from every slide, separated by `---`
+ * Extracts the text of each slide, as the text of its page
  * Captures document properties (title, subject, keywords, description, category, status, revision)
- * Reports slide count
+ * Reports the slide count, as the page count
  * Generates deterministic PPTX output using DeterministicIoPackaging
  * Optionally renders each slide to PNG via [Morph](https://github.com/SimonCropp/Morph) (opt-in)
+
+
+### Paged documents
+
+How the files of a document are named, where its text goes, and which of them are verified, is decided by Verify's [paged documents](https://github.com/VerifyTests/Verify/blob/main/docs/paged-documents.md) support, which every Verify plugin that splits a document into pages shares. See [The files](#the-files) and [Choosing what is verified](#choosing-what-is-verified).
 
 
 **See [Milestones](../../milestones?state=closed) for release notes.**
@@ -78,26 +83,133 @@ public static void Initialize() =>
 <!-- endSnippet -->
 
 
-### Outputs
+### The files
 
-`Initialize` takes an optional `OpenXmlOutputs` flags value that controls, globally, which kinds of target a document is split into. Kinds not selected are never extracted or rendered, so they cost nothing.
+For a test `Samples.VerifyWord` verifying a docx:
 
- * `Png`: one png per rendered page (`net10.0` with a Morph rendering backend referenced).
- * `Text`: the txt target holding the text of a Word document or PowerPoint presentation.
- * `Csv`: one csv target per Excel worksheet.
- * `None`: none of the above. Only the info and the source document are emitted.
- * `All`: all of the above. The default.
+| File | Holds |
+| --- | --- |
+| `Samples.VerifyWord.verified.docx` | The document, made deterministic |
+| `Samples.VerifyWord.verified.txt` | The info file: the properties and fonts of the document, its page count, and its text |
+| `Samples.VerifyWord#page_0001.verified.png` | The first page, drawn. Requires a [rendering backend](#render-pages-to-png-opt-in) |
 
-The info target and the source document (docx/xlsx/pptx) are not affected. Use `VerifierSettings.ExcludeTargets` to drop the source document.
+A pptx is verified the same way, with a page for each slide. An xlsx has its sheets in place of text: each is a csv named for the sheet, `Samples.VerifyExcel#Sheet1.verified.csv`, and its info file holds the properties of the workbook, its sheets and their columns.
+
+The info file has the shape every paged document has, with what is read from the document under `Document`. Where a page of a Word document ends is only known once it is laid out. So with a [rendering backend](#render-pages-to-png-opt-in) its text is under the page it is on, as that of a presentation is, and without one it is read as one text:
+
+<!-- snippet: Samples.VerifyWord.verified.txt -->
+<a id='snippet-Samples.VerifyWord.verified.txt'></a>
+```txt
+{
+  Document: {
+    Properties: {
+      Subject: Test Subject,
+      Title: Sample Document
+    }
+  },
+  Text:
+Hello World! This is a sample Word document.
+This is the second paragraph with some more text.
+}
+```
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.VerifyWord.verified.txt#L1-L11' title='Snippet source file'>snippet source</a> | <a href='#snippet-Samples.VerifyWord.verified.txt' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+A presentation is read slide by slide, so the text of a slide is under its page:
+
+<!-- snippet: Samples.VerifyPowerpoint.verified.txt -->
+<a id='snippet-Samples.VerifyPowerpoint.verified.txt'></a>
+```txt
+{
+  Document: {
+    Properties: {
+      Title: Sample Presentation
+    }
+  },
+  PageCount: 1,
+  Pages: [
+    {
+      Number: 1,
+      Text: Hello, PowerPoint!
+    }
+  ]
+}
+```
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.VerifyPowerpoint.verified.txt#L1-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-Samples.VerifyPowerpoint.verified.txt' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`PageCount` is the number of slides of a presentation. The pages of a Word document and of a workbook only exist once they are laid out, so their `PageCount` is written when the pages are [rendered](#render-pages-to-png-opt-in).
+
+
+### Choosing what is verified
+
+What a document is split into is controlled by Verify's settings for [paged documents](https://github.com/VerifyTests/Verify/blob/main/docs/paged-documents.md).
+
+`ExcludeDerivedTargets("png")` leaves out the rendered pages, keeping the document and its text:
+
+<!-- snippet: ExcludeRenderedPages -->
+<a id='snippet-ExcludeRenderedPages'></a>
+```cs
+[Test]
+public Task ExcludeRenderedPages() =>
+    VerifyFile("sample.docx")
+        .ExcludeDerivedTargets("png");
+```
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L147-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcludeRenderedPages' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`ExcludeDerivedTargets("csv")` leaves out the sheets of a workbook the same way, and [`ExcludeTargets`](#exclude-the-document) the document itself.
+
+The text is in the info file by default. `PageText` moves it to a file of its own, or leaves it out with `PageTextPlacement.None`. The file is `#page_0001.verified.txt` for each slide of a presentation and each page of a Word document, or a single `#text.verified.txt` for a Word document that is read as one text. Here with the rendered pages left out as well:
+
+<!-- snippet: PageTextPerPage -->
+<a id='snippet-PageTextPerPage'></a>
+```cs
+[Test]
+public Task PageTextPerPage() =>
+    VerifyFile("sample.pptx")
+        .PageText(PageTextPlacement.PerPage)
+        .ExcludeDerivedTargets("png");
+```
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L137-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-PageTextPerPage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+What these leave out is not produced at all (pages are not rendered, text is not read, sheets are not converted), so they also save work.
+
+`PagesToInclude` limits the pages that are verified, to the first pages of a document or to those a delegate accepts. The document itself is still verified whole, and `PageCount` is still the number of pages it has:
+
+<!-- snippet: PagesToInclude -->
+<a id='snippet-PagesToInclude'></a>
+```cs
+[Test]
+public async Task PagesToInclude()
+{
+    using var presentation = ThreeSlides();
+    await Verify(presentation)
+        .PagesToInclude(2);
+}
+```
+<sup><a href='/src/Verify.OpenXml.Tests/PowerpointPagesTests.cs#L9-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-PagesToInclude' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+It applies to pages: their images, their text, and for a workbook the csv of the sheet. A page of a workbook is a sheet, numbered in tab order, hidden or not, so the csv of a sheet is left out with its page whether or not there is a rendering backend. The info file of a workbook still lists every sheet. The text of a Word document that is read as one text, for want of a rendering backend, belongs to no page, so it is verified whole. A paragraph or a row of a table that runs over the end of a page is divided where the page ends. The text by page is that of the body as it is laid out, so a list paragraph starts with its marker. A document is also rendered whole, so the pages left out are still drawn before they are dropped.
+
+Each can also be set for every test, on `VerifierSettings`:
 
 <!-- snippet: InitializeOutputs -->
 <a id='snippet-InitializeOutputs'></a>
 ```cs
 [ModuleInitializer]
-public static void Initialize() =>
-    VerifyOpenXml.Initialize(OpenXmlOutputs.Csv);
+public static void Initialize()
+{
+    VerifyOpenXml.Initialize();
+
+    // For every test: no text and no rendered pages
+    VerifierSettings.PageText(PageTextPlacement.None);
+    VerifierSettings.ExcludeDerivedTargets("png");
+}
 ```
-<sup><a href='/src/StaticSettingsTests/ModuleInitializer.cs#L3-L9' title='Snippet source file'>snippet source</a> | <a href='#snippet-InitializeOutputs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/StaticSettingsTests/ModuleInitializer.cs#L3-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-InitializeOutputs' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -152,8 +264,10 @@ public async Task VerifySpreadsheetDocument()
 
 #### Example snapshot
 
-<!-- snippet: Samples.VerifyExcel.verified.csv -->
-<a id='snippet-Samples.VerifyExcel.verified.csv'></a>
+The sheet `Sheet1`, as `Samples.VerifyExcel#Sheet1.verified.csv`:
+
+<!-- snippet: Samples.VerifyExcel#Sheet1.verified.csv -->
+<a id='snippet-Samples.VerifyExcel#Sheet1.verified.csv'></a>
 ```csv
 0,First Name,Last Name,Gender,Country,Date,Age,Id,Formula
 1,Dulce,Abril,Female,United States,2017-10-15,32,1562,G2+H21594 (G2+H2)
@@ -163,7 +277,7 @@ public async Task VerifySpreadsheetDocument()
 5,Nereida,Magwood,Female,United States,2016-08-16,58,2468,2526
 6,Gaston,Brumm,Male,United States,2015-05-21,24,2554,2578
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.VerifyExcel.verified.csv#L1-L7' title='Snippet source file'>snippet source</a> | <a href='#snippet-Samples.VerifyExcel.verified.csv' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.VerifyExcel%23Sheet1.verified.csv#L1-L7' title='Snippet source file'>snippet source</a> | <a href='#snippet-Samples.VerifyExcel#Sheet1.verified.csv' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -177,18 +291,9 @@ public async Task VerifySpreadsheetDocument()
 ```cs
 [Test]
 public Task VerifyWord() =>
-    VerifyFile("sample.docx")
-        .Snapshot(
-            """
-            {
-              Properties: {
-                Subject: Test Subject,
-                Title: Sample Document
-              }
-            }
-            """);
+    VerifyFile("sample.docx");
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L47-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWord' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L47-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWord' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -201,19 +306,10 @@ public Task VerifyWord() =>
 public Task VerifyWordStream()
 {
     var stream = new MemoryStream(File.ReadAllBytes("sample.docx"));
-    return Verify(stream, "docx")
-        .Snapshot(
-            """
-            {
-              Properties: {
-                Subject: Test Subject,
-                Title: Sample Document
-              }
-            }
-            """);
+    return Verify(stream, "docx");
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L85-L103' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWordStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L67-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyWordStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -239,19 +335,10 @@ public async Task VerifyWordprocessingDocument()
 {
     await using var stream = File.OpenRead("sample.docx");
     using var reader = WordprocessingDocument.Open(stream, false);
-    await Verify(reader)
-        .Snapshot(
-            """
-            {
-              Properties: {
-                Subject: Test Subject,
-                Title: Sample Document
-              }
-            }
-            """);
+    await Verify(reader);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L64-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L55-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-WordprocessingDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -265,18 +352,9 @@ public async Task VerifyWordprocessingDocument()
 ```cs
 [Test]
 public Task VerifyPowerpoint() =>
-    VerifyFile("sample.pptx")
-        .Snapshot(
-            """
-            {
-              Properties: {
-                Title: Sample Presentation
-              },
-              SlideCount: 1
-            }
-            """);
+    VerifyFile("sample.pptx");
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L105-L120' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpoint' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L78-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpoint' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -289,19 +367,10 @@ public Task VerifyPowerpoint() =>
 public Task VerifyPowerpointStream()
 {
     var stream = new MemoryStream(File.ReadAllBytes("sample.pptx"));
-    return Verify(stream, "pptx")
-        .Snapshot(
-            """
-            {
-              Properties: {
-                Title: Sample Presentation
-              },
-              SlideCount: 1
-            }
-            """);
+    return Verify(stream, "pptx");
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L189-L207' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L126-L135' title='Snippet source file'>snippet source</a> | <a href='#snippet-VerifyPowerpointStream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -315,19 +384,10 @@ public async Task VerifyPresentationDocument()
 {
     await using var stream = File.OpenRead("sample.pptx");
     using var reader = PresentationDocument.Open(stream, false);
-    await Verify(reader)
-        .Snapshot(
-            """
-            {
-              Properties: {
-                Title: Sample Presentation
-              },
-              SlideCount: 1
-            }
-            """);
+    await Verify(reader);
 }
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L168-L187' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L114-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-PresentationDocument' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -361,27 +421,30 @@ When a backend is present, every verification (file, stream, or document object)
 
  * **Word** - one page per laid-out page of the document.
  * **PowerPoint** - one page per slide, in `p:sldIdLst` order.
- * **Excel** - pages come from the print layout rather than the sheet: a long sheet paginates downward, and each visible sheet starts a new page with its own paper size and orientation.
+ * **Excel** - one page per sheet, drawn whole as the one image, however long the sheet is and whatever paper its page setup names. A hidden sheet is verified as any other: it has a page and a csv, and is named under `HiddenSheets` in the info file.
 
-A single rendered page is written without an index:
+A page is named for its number, counted from 1, whether the document has one page or several:
 
 ```
 Samples.VerifyWord.verified.docx
-Samples.VerifyWord#00.verified.txt
-Samples.VerifyWord#01.verified.txt
-Samples.VerifyWord.verified.png
+Samples.VerifyWord.verified.txt
+Samples.VerifyWord#page_0001.verified.png
 ```
 
-Multiple pages are indexed in page order. For example a two-sheet workbook:
+For example a two-sheet workbook, where each sheet is a page:
 
 ```
 Samples.MultipleSheets.verified.xlsx
 Samples.MultipleSheets.verified.txt
 Samples.MultipleSheets#Sheet1.verified.csv
 Samples.MultipleSheets#Sheet2.verified.csv
-Samples.MultipleSheets#00.verified.png
-Samples.MultipleSheets#01.verified.png
+Samples.MultipleSheets#page_0001.verified.png
+Samples.MultipleSheets#page_0002.verified.png
 ```
+
+Rendering also puts the `PageCount` of a Word document or a workbook in its info file.
+
+`ExcludeDerivedTargets("png")` [leaves the pages out](#choosing-what-is-verified), for one verification or for every test, and nothing is rendered.
 
 
 ### Backend selection rules
@@ -449,7 +512,80 @@ public Task ExcludeExcel() =>
     VerifyFile("sample.xlsx")
         .ExcludeTargets("xlsx");
 ```
-<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L122-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcludeExcel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Verify.OpenXml.Tests/Samples.cs#L86-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcludeExcel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The same applies to `docx` and `pptx`. To exclude for every test, call `VerifierSettings.ExcludeTargets("xlsx")` at initialization.
+
+
+## Reviewing changes
+
+A change to a document is a change to several files: the document, its info file, and every page and sheet. Verify tells the diff tool that the pages, the sheets and the info file were derived from the document, and [DiffEngineViewer](https://github.com/VerifyTests/DiffEngine/blob/main/docs/viewer.md#files-derived-from-a-document), which draws the pages of a Word, Excel or PowerPoint document itself, shows them as one row and accepts them together. Other diff tools are given each file, as before.
+
+When the document has changed, its pages, sheets and info file are compared exactly, skipping any [comparer](https://github.com/VerifyTests/Verify/blob/main/docs/comparer.md) registered for them.
+
+
+## Migrating from 1.x
+
+Version 2 moves to the paged document support in Verify 33.3. Pages and single sheets are renamed, the text moves into the info file, and `OpenXmlOutputs` gives way to Verify's own settings.
+
+
+### Settings
+
+`Initialize` no longer takes an `OpenXmlOutputs`. Each output that could be left out of it is now left out by a setting of Verify, for every test on `VerifierSettings` or for a single verification:
+
+| 1.x: not in `OpenXmlOutputs` | 2.x |
+| --- | --- |
+| `Png` | `ExcludeDerivedTargets("png")` |
+| `Text` | `PageText(PageTextPlacement.None)` |
+| `Csv` | `ExcludeDerivedTargets("csv")` |
+
+So `Initialize(OpenXmlOutputs.Csv)` becomes:
+
+```cs
+VerifyOpenXml.Initialize();
+VerifierSettings.PageText(PageTextPlacement.None);
+VerifierSettings.ExcludeDerivedTargets("png");
+```
+
+
+### Files
+
+For a test `Tests.Report`:
+
+| 1.x | 2.x |
+| --- | --- |
+| `Tests.Report.verified.png`, the page of a document with one | `Tests.Report#page_0001.verified.png` |
+| `Tests.Report#00.verified.png`, `#01`, the pages of a document with several | `Tests.Report#page_0001.verified.png`, `#page_0002` |
+| `Tests.Report.verified.csv`, the sheet of a workbook with one | `Tests.Report#Sheet1.verified.csv`, by the name of the sheet |
+| `Tests.Report#Sheet1.verified.csv`, a sheet of a workbook with several | The same |
+| `Tests.Report#00.verified.txt`, the info of a docx or pptx | `Tests.Report.verified.txt` |
+| `Tests.Report#01.verified.txt`, the text of a docx or pptx | In the info file, or with `PageText(PageTextPlacement.PerPage)` in `#page_0001.verified.txt` for each slide of a pptx and each page of a docx, or `#text.verified.txt` for a docx read without a rendering backend |
+| `Tests.Report.verified.txt`, the info of an xlsx | The same |
+| `Tests.Report.verified.docx`, `.xlsx`, `.pptx` | The same |
+
+A renamed snapshot shows as a new file and a pending delete. Accepting both, or running once with [AutoVerify](https://github.com/VerifyTests/Verify/blob/main/docs/autoverify.md), moves a test over. The content of a page and of a sheet is unchanged, so source control shows each as a rename.
+
+
+### The info file
+
+What was at the top of the info file is now under `Document`, with the page count and the text beside it. For a docx:
+
+```
+{                                    {
+  Properties: {                        Document: {
+    Title: Sample Document               Properties: {
+  },                                       Title: Sample Document
+  Fonts: [                               },
+    Aptos                                Fonts: [
+  ]                                        Aptos
+}                                        ]
+                                       },
+                                       PageCount: 1,
+                                       Text: The text of the document
+                                     }
+```
+
+For an xlsx the properties of the workbook, with its `Sheets`, move under `Document` the same way.
+
+For a pptx `SlideCount` is now `PageCount`, and the text is the `Text` of each page, where it was one text with `---` between the slides. Slides are read in the order they are shown in, that of `p:sldIdLst`, so that the text of a slide is on the page it is drawn on. They were read in the order of the slide parts, which is not the order of a deck whose slides have been moved.
