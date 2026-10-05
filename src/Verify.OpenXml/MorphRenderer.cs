@@ -68,13 +68,32 @@ static class MorphRenderer
     public static IReadOnlyList<byte[]> RenderWord(Stream docx) =>
         Render(word!, docx);
 
+    // A sheet is drawn whole, as the one image, rather than as it prints. So a page is a sheet,
+    // however long it is and whatever paper its page setup names.
     public static IReadOnlyList<byte[]> RenderExcel(Stream xlsx) =>
-        Render(excel!, xlsx);
+        Render(
+            excel!,
+            xlsx,
+            Options() with
+            {
+                SheetPagination = SheetPagination.OnePagePerSheet
+            });
 
     public static IReadOnlyList<byte[]> RenderPowerpoint(Stream pptx) =>
         Render(powerpoint!, pptx);
 
-    static IReadOnlyList<byte[]> Render(Renderer render, Stream package)
+    // The 1 based page each bookmark of a docx is on, by the name of the bookmark. Laid out with the
+    // options the pages are drawn with, so a bookmark is on the page its text is drawn on.
+    public static IReadOnlyDictionary<string, int> WordBookmarkPages(Stream docx)
+    {
+        docx.Position = 0;
+        return DocumentConverter.GetBookmarkPages(docx, Options());
+    }
+
+    static IReadOnlyList<byte[]> Render(Renderer render, Stream package) =>
+        Render(render, package, Options());
+
+    static IReadOnlyList<byte[]> Render(Renderer render, Stream package, ImageExportOptions options)
     {
         package.Position = 0;
         using var copy = new MemoryStream();
@@ -82,15 +101,16 @@ static class MorphRenderer
         package.Position = 0;
         copy.Position = 0;
 
-        return render(
-            copy,
-            new()
-            {
-                DeterministicRendering = true,
-                FontDirectory = VerifyOpenXml.FontDirectory,
-                DefaultFont = VerifyOpenXml.DefaultFont,
-                UseLetterPageSize = VerifyOpenXml.UseLetterPageSize
-            });
+        return render(copy, options);
     }
+
+    static ImageExportOptions Options() =>
+        new()
+        {
+            DeterministicRendering = true,
+            FontDirectory = VerifyOpenXml.FontDirectory,
+            DefaultFont = VerifyOpenXml.DefaultFont,
+            UseLetterPageSize = VerifyOpenXml.UseLetterPageSize
+        };
 }
 #endif

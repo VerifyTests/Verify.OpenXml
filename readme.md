@@ -95,7 +95,7 @@ For a test `Samples.VerifyWord` verifying a docx:
 
 A pptx is verified the same way, with a page for each slide. An xlsx has its sheets in place of text: each is a csv named for the sheet, `Samples.VerifyExcel#Sheet1.verified.csv`, and its info file holds the properties of the workbook, its sheets and their columns.
 
-The info file has the shape every paged document has, with what is read from the document under `Document`. A Word document is read as one text:
+The info file has the shape every paged document has, with what is read from the document under `Document`. Where a page of a Word document ends is only known once it is laid out. So with a [rendering backend](#render-pages-to-png-opt-in) its text is under the page it is on, as that of a presentation is, and without one it is read as one text:
 
 <!-- snippet: Samples.VerifyWord.verified.txt -->
 <a id='snippet-Samples.VerifyWord.verified.txt'></a>
@@ -160,7 +160,7 @@ public Task ExcludeRenderedPages() =>
 
 `ExcludeDerivedTargets("csv")` leaves out the sheets of a workbook the same way, and [`ExcludeTargets`](#exclude-the-document) the document itself.
 
-The text is in the info file by default. `PageText` moves it to a file of its own, or leaves it out with `PageTextPlacement.None`. The file is `#page_0001.verified.txt` for each slide of a presentation, and `#text.verified.txt` for a Word document. Here with the rendered pages left out as well:
+The text is in the info file by default. `PageText` moves it to a file of its own, or leaves it out with `PageTextPlacement.None`. The file is `#page_0001.verified.txt` for each slide of a presentation and each page of a Word document, or a single `#text.verified.txt` for a Word document that is read as one text. Here with the rendered pages left out as well:
 
 <!-- snippet: PageTextPerPage -->
 <a id='snippet-PageTextPerPage'></a>
@@ -192,7 +192,7 @@ public async Task PagesToInclude()
 <sup><a href='/src/Verify.OpenXml.Tests/PowerpointPagesTests.cs#L9-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-PagesToInclude' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-It applies to pages only. The text of a Word document and the sheets of a workbook belong to no page, so they are verified whole. A document is also rendered whole, so the pages left out are still drawn before they are dropped.
+It applies to pages only: their images, and their text. The sheets of a workbook belong to no page, so they are verified whole, and so is the text of a Word document that is read as one text, for want of a rendering backend. A paragraph that runs over the end of a page is whole in the text of the page it starts on, and a row of a table likewise. A document is also rendered whole, so the pages left out are still drawn before they are dropped.
 
 Each can also be set for every test, on `VerifierSettings`:
 
@@ -421,7 +421,7 @@ When a backend is present, every verification (file, stream, or document object)
 
  * **Word** - one page per laid-out page of the document.
  * **PowerPoint** - one page per slide, in `p:sldIdLst` order.
- * **Excel** - pages come from the print layout rather than the sheet: a long sheet paginates downward, and each visible sheet starts a new page with its own paper size and orientation.
+ * **Excel** - one page per visible sheet, drawn whole as the one image, however long the sheet is and whatever paper its page setup names. A hidden sheet has no page.
 
 A page is named for its number, counted from 1, whether the document has one page or several:
 
@@ -431,7 +431,7 @@ Samples.VerifyWord.verified.txt
 Samples.VerifyWord#page_0001.verified.png
 ```
 
-For example a two-sheet workbook, where each sheet prints on a page of its own:
+For example a two-sheet workbook, where each sheet is a page:
 
 ```
 Samples.MultipleSheets.verified.xlsx
@@ -560,7 +560,7 @@ For a test `Tests.Report`:
 | `Tests.Report.verified.csv`, the sheet of a workbook with one | `Tests.Report#Sheet1.verified.csv`, by the name of the sheet |
 | `Tests.Report#Sheet1.verified.csv`, a sheet of a workbook with several | The same |
 | `Tests.Report#00.verified.txt`, the info of a docx or pptx | `Tests.Report.verified.txt` |
-| `Tests.Report#01.verified.txt`, the text of a docx or pptx | In the info file, or with `PageText(PageTextPlacement.PerPage)` in `#text.verified.txt` for a docx and `#page_0001.verified.txt` for each slide of a pptx |
+| `Tests.Report#01.verified.txt`, the text of a docx or pptx | In the info file, or with `PageText(PageTextPlacement.PerPage)` in `#page_0001.verified.txt` for each slide of a pptx and each page of a docx, or `#text.verified.txt` for a docx read without a rendering backend |
 | `Tests.Report.verified.txt`, the info of an xlsx | The same |
 | `Tests.Report.verified.docx`, `.xlsx`, `.pptx` | The same |
 

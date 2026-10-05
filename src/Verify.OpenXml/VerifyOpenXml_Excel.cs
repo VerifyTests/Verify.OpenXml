@@ -61,7 +61,7 @@ public static partial class VerifyOpenXml
         };
 
         // Names the pages, and says which of them the verification wants. A workbook has pages only
-        // once it is rendered: they come from the print layout, not from the sheets.
+        // once it is rendered: one for each sheet that is not hidden, drawn whole.
         var conversion = new PagedConversion(settings)
         {
             Info = info

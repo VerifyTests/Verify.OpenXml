@@ -44,6 +44,10 @@
       <LinkBase>Tests\</LinkBase>
       <Link>Tests\VerifyChecksTests.cs</Link>
     </Compile>
+    <Compile Include="..\Verify.OpenXml.Tests\WordPagesTests.cs">
+      <LinkBase>Tests\</LinkBase>
+      <Link>Tests\WordPagesTests.cs</Link>
+    </Compile>
     <None Include="..\Verify.OpenXml.Tests\sample.docx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>sample.docx</Link>

@@ -30,9 +30,11 @@ public static partial class VerifyOpenXml
             Info = GetWordInfo(document)
         };
 
-        // The text is read from the body, which knows nothing of where a page ends, so it is the
-        // text of the document rather than of each page.
-        if (conversion.IncludeText)
+        // The text is read from the body, which knows nothing of where a page ends. Only a renderer
+        // does, so the text is that of each page where there is one, and of the document where not.
+        var pageText = TextByPage(conversion);
+        if (conversion.IncludeText &&
+            !pageText)
         {
             conversion.Text(GetWordDocumentText(document));
         }
@@ -43,7 +45,8 @@ public static partial class VerifyOpenXml
 
         using var sourceStream = new MemoryStream();
         if (buildDeterministic ||
-            render)
+            render ||
+            pageText)
         {
             document.Clone(sourceStream);
             sourceStream.Position = 0;
@@ -66,10 +69,220 @@ public static partial class VerifyOpenXml
         {
             conversion.AddImages(MorphRenderer.RenderWord(deterministic ?? sourceStream));
         }
+
+        if (pageText)
+        {
+            // A page with both is added twice, once for its image and once for its text. They are
+            // the one page to PagedConversion, which goes by the number.
+            foreach (var (number, text) in GetWordPageTexts(deterministic ?? sourceStream))
+            {
+                if (conversion.IsPageIncluded(number))
+                {
+                    conversion.AddPage(number, text: text);
+                }
+            }
+        }
 #endif
 
         return conversion.Build();
     }
+
+    /// <summary>
+    /// Whether the text is read page by page, so that <c>PagesToInclude</c> limits it as it does
+    /// the images. That takes laying the document out, so it is false where there is no renderer:
+    /// below <c>net10.0</c>, and when no Morph backend is referenced.
+    /// </summary>
+    static bool TextByPage(PagedConversion conversion) =>
+#if NET10_0_OR_GREATER
+        MorphRenderer.Enabled &&
+        conversion.IncludeText;
+#else
+        false;
+#endif
+
+#if NET10_0_OR_GREATER
+    // The text of each page that has any, by the 1 based number of the page.
+    //
+    // The renderer says which page a bookmark is on, and nothing else about where text falls. So a
+    // copy of the document is given a bookmark at the start of every paragraph and table row that
+    // has text, and each is put on the page its bookmark is on. A paragraph that runs over the end
+    // of a page is whole on the page it starts on.
+    static SortedDictionary<int, string> GetWordPageTexts(Stream package)
+    {
+        package.Position = 0;
+        using var copy = new MemoryStream();
+        package.CopyTo(copy);
+        package.Position = 0;
+
+        var units = new List<(string? bookmark, string text)>();
+        using (var document = WordprocessingDocument.Open(copy, true))
+        {
+            var body = document.MainDocumentPart?.Document?.Body;
+            if (body == null)
+            {
+                return [];
+            }
+
+            var id = NextBookmarkId(body);
+            foreach (var (anchor, text) in TextUnits(body).ToList())
+            {
+                string? name = null;
+                if (anchor != null)
+                {
+                    name = $"VerifyPage{units.Count}";
+                    AddBookmark(anchor, name, id++);
+                }
+
+                units.Add((name, text));
+            }
+        }
+
+        var bookmarkPages = MorphRenderer.WordBookmarkPages(copy);
+
+        var builders = new SortedDictionary<int, StringBuilder>();
+        var page = 1;
+        foreach (var (bookmark, text) in units)
+        {
+            // One the renderer does not place stays with what is before it
+            if (bookmark != null &&
+                bookmarkPages.TryGetValue(bookmark, out var found))
+            {
+                page = found;
+            }
+
+            if (!builders.TryGetValue(page, out var builder))
+            {
+                builders[page] = builder = new();
+            }
+
+            builder.Append(text);
+        }
+
+        var pages = new SortedDictionary<int, string>();
+        foreach (var (number, builder) in builders)
+        {
+            builder.TrimEnd();
+            if (builder.Length > 0)
+            {
+                pages[number] = builder.ToString();
+            }
+        }
+
+        return pages;
+    }
+
+    static int NextBookmarkId(Body body)
+    {
+        var max = 0;
+        foreach (var bookmark in body.Descendants<BookmarkStart>())
+        {
+            if (int.TryParse(bookmark.Id?.Value, out var id) &&
+                id > max)
+            {
+                max = id;
+            }
+        }
+
+        return max + 1;
+    }
+
+    // As AppendRun writes it
+    static readonly string pageBreakMarker = $"{Environment.NewLine}--- Page Break ---{Environment.NewLine}";
+
+    // After the properties of the paragraph, which have to be its first child
+    static void AddBookmark(Paragraph paragraph, string name, int id)
+    {
+        var start = new BookmarkStart
+        {
+            Id = id.ToString(CultureInfo.InvariantCulture),
+            Name = name
+        };
+        var end = new BookmarkEnd
+        {
+            Id = start.Id
+        };
+
+        var properties = paragraph.ParagraphProperties;
+        if (properties == null)
+        {
+            paragraph.PrependChild(end);
+            paragraph.PrependChild(start);
+            return;
+        }
+
+        properties.InsertAfterSelf(start);
+        start.InsertAfterSelf(end);
+    }
+
+    // The text of the body in the pieces that can be told apart by page: a paragraph, or a row of
+    // a table, each with the paragraph that marks where it starts. In the order, and with the
+    // text, that AppendBlocks gives.
+    static IEnumerable<(Paragraph? anchor, string text)> TextUnits(OpenXmlElement parent)
+    {
+        foreach (var child in parent.ChildElements)
+        {
+            switch (child)
+            {
+                case Paragraph paragraph:
+                    var builder = new StringBuilder();
+                    if (AppendWordParagraphText(builder, paragraph))
+                    {
+                        builder.AppendLine();
+
+                        // The line that marks a page break in the text of a whole document says
+                        // nothing in text that is already split by page
+                        var text = builder.ToString().Replace(pageBreakMarker, Environment.NewLine);
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            yield return (paragraph, text);
+                        }
+                    }
+
+                    break;
+                case WordTable table:
+                    foreach (var unit in RowUnits(table))
+                    {
+                        yield return unit;
+                    }
+
+                    break;
+                case SdtBlock sdt when Content(sdt) is { } content:
+                    foreach (var unit in TextUnits(content))
+                    {
+                        yield return unit;
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    static IEnumerable<(Paragraph? anchor, string text)> RowUnits(OpenXmlElement parent)
+    {
+        foreach (var child in parent.ChildElements)
+        {
+            switch (child)
+            {
+                case TableRow row:
+                    var builder = new StringBuilder();
+                    AppendRow(builder, row);
+                    if (builder.Length > 0)
+                    {
+                        yield return (row.Descendants<Paragraph>().FirstOrDefault(), builder.ToString());
+                    }
+
+                    break;
+                case SdtRow sdt when Content(sdt) is { } content:
+                    foreach (var unit in RowUnits(content))
+                    {
+                        yield return unit;
+                    }
+
+                    break;
+            }
+        }
+    }
+#endif
 
     /// <summary>
     /// Document metadata, or null when the document carries none — so no empty <c>Document</c> is written.

@@ -5,13 +5,17 @@
       Title: Sample Document
     }
   },
-  PageCount: 1,
-  Pages: [
-    {
-      Number: 1,
-      Text:
+  Text:
 Hello World! This is a sample Word document.
 This is the second paragraph with some more text.
-    }
-  ]
+
+--- Page Break ---
+
+Second page, paragraph
+Second page, row	cell
+
+--- Page Break ---
+
+Third page, first row	cell
+Third page, second row	cell
 }
