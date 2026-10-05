@@ -82,12 +82,16 @@ static class MorphRenderer
     public static IReadOnlyList<byte[]> RenderPowerpoint(Stream pptx) =>
         Render(powerpoint!, pptx);
 
-    // The 1 based page each bookmark of a docx is on, by the name of the bookmark. Laid out with the
-    // options the pages are drawn with, so a bookmark is on the page its text is drawn on.
-    public static IReadOnlyDictionary<string, int> WordBookmarkPages(Stream docx)
+    // The text of each page of a docx, in page order. Laid out with the options the pages are drawn
+    // with, so the text of a page is the text drawn on it.
+    public static IReadOnlyList<string> WordPageTexts(Stream docx)
     {
         docx.Position = 0;
-        return DocumentConverter.GetBookmarkPages(docx, Options());
+        using var copy = new MemoryStream();
+        docx.CopyTo(copy);
+        docx.Position = 0;
+        copy.Position = 0;
+        return DocumentConverter.GetPageTexts(copy, Options());
     }
 
     static IReadOnlyList<byte[]> Render(Renderer render, Stream package) =>

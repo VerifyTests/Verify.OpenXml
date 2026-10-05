@@ -192,7 +192,7 @@ public async Task PagesToInclude()
 <sup><a href='/src/Verify.OpenXml.Tests/PowerpointPagesTests.cs#L9-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-PagesToInclude' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-It applies to pages only: their images, and their text. The sheets of a workbook belong to no page, so they are verified whole, and so is the text of a Word document that is read as one text, for want of a rendering backend. A paragraph that runs over the end of a page is whole in the text of the page it starts on, and a row of a table likewise. A document is also rendered whole, so the pages left out are still drawn before they are dropped.
+It applies to pages only: their images, and their text. The sheets of a workbook belong to no page, so they are verified whole, and so is the text of a Word document that is read as one text, for want of a rendering backend. A paragraph or a row of a table that runs over the end of a page is divided where the page ends. The text by page is that of the body as it is laid out, so a list paragraph starts with its marker. A document is also rendered whole, so the pages left out are still drawn before they are dropped.
 
 Each can also be set for every test, on `VerifierSettings`:
 

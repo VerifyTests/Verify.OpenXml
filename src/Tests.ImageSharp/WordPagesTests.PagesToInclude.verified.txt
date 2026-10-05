@@ -5,6 +5,7 @@
       Title: Sample Document
     }
   },
+  PageCount: 3,
   Pages: [
     {
       Number: 1,
