@@ -20,6 +20,10 @@
       <LinkBase>Tests\</LinkBase>
       <Link>Tests\ExcelDocumentPropertiesTests.cs</Link>
     </Compile>
+    <Compile Include="..\Verify.OpenXml.Tests\ExcelPagesTests.cs">
+      <LinkBase>Tests\</LinkBase>
+      <Link>Tests\ExcelPagesTests.cs</Link>
+    </Compile>
     <Compile Include="..\Verify.OpenXml.Tests\ExcelProtectionTests.cs">
       <LinkBase>Tests\</LinkBase>
       <Link>Tests\ExcelProtectionTests.cs</Link>

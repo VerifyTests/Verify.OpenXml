@@ -2,6 +2,14 @@ class ExcelInfo
 {
     public required IReadOnlyList<SheetInfo> Sheets { get; init; }
     public required int WorksheetCount { get; init; }
+
+    /// <summary>
+    /// The names of the sheets that are hidden, whether Excel can unhide them or only code can.
+    /// Null, so left out, for a workbook with none. A hidden sheet is verified as any other, so
+    /// this is what says it is hidden.
+    /// </summary>
+    public IReadOnlyList<string>? HiddenSheets { get; init; }
+
     public string? Title { get; init; }
     public string? Subject { get; init; }
     public string? Keywords { get; init; }
@@ -20,6 +28,7 @@ class ExcelInfo
 class SheetInfo
 {
     public required string Name { get; init; }
+
     /// <summary>
     /// Attributes (other than <c>name</c>) found on the matching <c>&lt;sheet&gt;</c> element in a
     /// workbook custom XML part. Mirrors <see cref="ColumnInfo.Metadata"/> at the sheet level so

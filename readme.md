@@ -192,7 +192,7 @@ public async Task PagesToInclude()
 <sup><a href='/src/Verify.OpenXml.Tests/PowerpointPagesTests.cs#L9-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-PagesToInclude' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-It applies to pages only: their images, and their text. The sheets of a workbook belong to no page, so they are verified whole, and so is the text of a Word document that is read as one text, for want of a rendering backend. A paragraph or a row of a table that runs over the end of a page is divided where the page ends. The text by page is that of the body as it is laid out, so a list paragraph starts with its marker. A document is also rendered whole, so the pages left out are still drawn before they are dropped.
+It applies to pages: their images, their text, and for a workbook the csv of the sheet. A page of a workbook is a sheet, numbered in tab order, hidden or not, so the csv of a sheet is left out with its page whether or not there is a rendering backend. The info file of a workbook still lists every sheet. The text of a Word document that is read as one text, for want of a rendering backend, belongs to no page, so it is verified whole. A paragraph or a row of a table that runs over the end of a page is divided where the page ends. The text by page is that of the body as it is laid out, so a list paragraph starts with its marker. A document is also rendered whole, so the pages left out are still drawn before they are dropped.
 
 Each can also be set for every test, on `VerifierSettings`:
 
@@ -421,7 +421,7 @@ When a backend is present, every verification (file, stream, or document object)
 
  * **Word** - one page per laid-out page of the document.
  * **PowerPoint** - one page per slide, in `p:sldIdLst` order.
- * **Excel** - one page per visible sheet, drawn whole as the one image, however long the sheet is and whatever paper its page setup names. A hidden sheet has no page.
+ * **Excel** - one page per sheet, drawn whole as the one image, however long the sheet is and whatever paper its page setup names. A hidden sheet is verified as any other: it has a page and a csv, and is named under `HiddenSheets` in the info file.
 
 A page is named for its number, counted from 1, whether the document has one page or several:
 

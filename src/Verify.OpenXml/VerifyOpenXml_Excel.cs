@@ -24,7 +24,7 @@ public static partial class VerifyOpenXml
         List<(StringBuilder Csv, string Name)> sheets = [];
         if (!settings.IsDerivedTargetExcluded("csv"))
         {
-            sheets = Convert(document).ToList();
+            sheets = Convert(document, settings).ToList();
         }
 
         var workbookPart = document.WorkbookPart!;
@@ -43,6 +43,7 @@ public static partial class VerifyOpenXml
         {
             Sheets = sheetInfos,
             WorksheetCount = workbookPart.Workbook!.Sheets!.Elements<Sheet>().Count(),
+            HiddenSheets = HiddenSheets(workbookPart),
             Title = packageProperties.Title,
             Subject = packageProperties.Subject,
             Keywords = packageProperties.Keywords,
@@ -61,7 +62,7 @@ public static partial class VerifyOpenXml
         };
 
         // Names the pages, and says which of them the verification wants. A workbook has pages only
-        // once it is rendered: one for each sheet that is not hidden, drawn whole.
+        // once it is rendered: one for each sheet, hidden or not, drawn whole.
         var conversion = new PagedConversion(settings)
         {
             Info = info
@@ -102,7 +103,7 @@ public static partial class VerifyOpenXml
         // so the rendered pixels are the same either way).
         if (render)
         {
-            conversion.AddImages(MorphRenderer.RenderExcel(deterministic ?? sourceStream));
+            conversion.AddImages(MorphRenderer.RenderExcel(WithEverySheetVisible(document, deterministic ?? sourceStream)));
         }
 #endif
 
@@ -876,13 +877,23 @@ public static partial class VerifyOpenXml
         return value;
     }
 
-    static IEnumerable<(StringBuilder Csv, string Name)> Convert(SpreadsheetDocument document)
+    // A page is a sheet, numbered in tab order, hidden or not, which is how they are drawn. So the
+    // sheet of a page PagesToInclude leaves out is not read, and its csv goes with its image,
+    // whether or not there is a renderer to draw one.
+    static IEnumerable<(StringBuilder Csv, string Name)> Convert(SpreadsheetDocument document, IReadOnlyDictionary<string, object> settings)
     {
         var workbookPart = document.WorkbookPart!;
         var counter = Counter.Current;
+        var page = 0;
 
         foreach (var sheet in workbookPart.Workbook!.Sheets!.Elements<Sheet>())
         {
+            page++;
+            if (!settings.IsPageIncluded(page))
+            {
+                continue;
+            }
+
             var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id!);
 
             var sharedStringItems = workbookPart.SharedStringTablePart?.SharedStringTable?.Elements<SharedStringItem>().ToList();
@@ -921,6 +932,57 @@ public static partial class VerifyOpenXml
             yield return (builder, sheet.Name!.Value!);
         }
     }
+
+    // Hidden so that Excel can unhide it, or so that only code can
+    static bool IsHidden(Sheet sheet)
+    {
+        var state = sheet.State?.Value;
+        return state == SheetStateValues.Hidden ||
+               state == SheetStateValues.VeryHidden;
+    }
+
+    static List<string>? HiddenSheets(WorkbookPart workbookPart)
+    {
+        var hidden = workbookPart.Workbook!.Sheets!.Elements<Sheet>()
+            .Where(IsHidden)
+            .Select(_ => _.Name!.Value!)
+            .ToList();
+        if (hidden.Count == 0)
+        {
+            return null;
+        }
+
+        return hidden;
+    }
+
+#if NET10_0_OR_GREATER
+    // The renderer draws a workbook as it prints, and a hidden sheet is not printed. Every sheet is
+    // a page here, so a workbook with a hidden one is drawn from a copy in which none is. The copy
+    // is only for drawing: the workbook that is verified is as it was.
+    static Stream WithEverySheetVisible(SpreadsheetDocument document, Stream package)
+    {
+        var sheets = document.WorkbookPart!.Workbook!.Sheets!.Elements<Sheet>();
+        if (!sheets.Any(IsHidden))
+        {
+            return package;
+        }
+
+        package.Position = 0;
+        var copy = new MemoryStream();
+        package.CopyTo(copy);
+        package.Position = 0;
+
+        using (var workbook = SpreadsheetDocument.Open(copy, true))
+        {
+            foreach (var sheet in workbook.WorkbookPart!.Workbook!.Sheets!.Elements<Sheet>())
+            {
+                sheet.State = null;
+            }
+        }
+
+        return copy;
+    }
+#endif
 
     static string GetCellValue(Cell cell, WorkbookPart workbookPart, List<SharedStringItem>? sharedStringItems, Counter counter)
     {
