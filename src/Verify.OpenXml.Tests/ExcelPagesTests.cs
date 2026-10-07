@@ -1,5 +1,3 @@
-using S = DocumentFormat.OpenXml.Spreadsheet;
-
 // Verifies that a page of a workbook is a sheet, hidden or not, and that PagesToInclude limits the
 // csv of a sheet as it does its image. Which sheet a page is does not depend on a renderer, so the
 // csv is limited the same way in a project without one.
@@ -42,14 +40,14 @@ public class ExcelPagesTests
     [Test]
     public async Task AVeryHiddenSheetIsAPage()
     {
-        using var workbook = FirstSheetHidden(S.SheetStateValues.VeryHidden);
+        using var workbook = FirstSheetHidden(SheetStateValues.VeryHidden);
         await Verify(workbook);
     }
 
     static SpreadsheetDocument FirstSheetHidden() =>
-        FirstSheetHidden(S.SheetStateValues.Hidden);
+        FirstSheetHidden(SheetStateValues.Hidden);
 
-    static SpreadsheetDocument FirstSheetHidden(S.SheetStateValues state)
+    static SpreadsheetDocument FirstSheetHidden(SheetStateValues state)
     {
         // Copied, since a stream over the bytes could not grow
         var stream = new MemoryStream();
@@ -59,7 +57,7 @@ public class ExcelPagesTests
         }
 
         var workbook = SpreadsheetDocument.Open(stream, true);
-        var sheet = workbook.WorkbookPart!.Workbook!.Sheets!.Elements<S.Sheet>().First();
+        var sheet = workbook.WorkbookPart!.Workbook!.Sheets!.Elements<Sheet>().First();
         sheet.State = state;
         return workbook;
     }
