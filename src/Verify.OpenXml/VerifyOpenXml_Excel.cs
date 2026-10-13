@@ -972,12 +972,10 @@ public static partial class VerifyOpenXml
         package.CopyTo(copy);
         package.Position = 0;
 
-        using (var workbook = SpreadsheetDocument.Open(copy, true))
+        using var workbook = SpreadsheetDocument.Open(copy, true);
+        foreach (var sheet in workbook.WorkbookPart!.Workbook!.Sheets!.Elements<Sheet>())
         {
-            foreach (var sheet in workbook.WorkbookPart!.Workbook!.Sheets!.Elements<Sheet>())
-            {
-                sheet.State = null;
-            }
+            sheet.State = null;
         }
 
         return copy;
