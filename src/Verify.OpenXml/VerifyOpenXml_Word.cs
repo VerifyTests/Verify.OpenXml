@@ -91,6 +91,7 @@ public static partial class VerifyOpenXml
     /// the images. That takes laying the document out, so it is false where there is no renderer:
     /// below <c>net10.0</c>, and when no Morph backend is referenced.
     /// </summary>
+    // ReSharper disable once UnusedParameter.Local
     static bool TextByPage(PagedConversion conversion) =>
 #if NET10_0_OR_GREATER
         MorphRenderer.Enabled &&

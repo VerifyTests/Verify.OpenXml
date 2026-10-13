@@ -64,6 +64,7 @@ public static partial class VerifyOpenXml
     /// <c>ExcludeDerivedTargets("png")</c>. Cloning the source package is only worth it for the
     /// deterministic binary target or for rendering, so each converter checks this before cloning.
     /// </summary>
+    // ReSharper disable once UnusedParameter.Local
     static bool RenderingEnabled(PagedConversion conversion) =>
 #if NET10_0_OR_GREATER
         MorphRenderer.Enabled &&
