@@ -10,7 +10,7 @@
     <PackageVersion Include="Morph.Skia" Version="1.22.0" />
     <PackageVersion Include="Morph.ImageSharp" Version="1.22.0" />
     <PackageVersion Include="MarkdownSnippets.MsBuild" Version="28.5.0" />
-    <PackageVersion Include="TUnit" Version="1.74.0" />
+    <PackageVersion Include="TUnit" Version="1.75.0" />
     <PackageVersion Include="Polyfill" Version="11.4.5" />
     <PackageVersion Include="ProjectDefaults" Version="1.0.184" />
     <PackageVersion Include="ProjectFiles" Version="1.6.0" />
