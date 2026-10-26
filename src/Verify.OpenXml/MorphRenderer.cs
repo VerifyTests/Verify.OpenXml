@@ -11,7 +11,7 @@ static class MorphRenderer
     static Renderer? excel;
     static Renderer? powerpoint;
 
-    delegate IReadOnlyList<byte[]> Renderer(Stream package, ImageExportOptions options);
+    delegate IReadOnlyList<byte[]> Renderer(Stream package, ImageExportOptions options, Cancel cancel = default);
 
     /// <summary>
     /// Whether a backend was found. All three renderers come from the same assembly, so this holds for
