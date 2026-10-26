@@ -83,6 +83,27 @@ public static void Initialize() =>
 <!-- endSnippet -->
 
 
+### Using with other plugins for the same formats
+
+Another plugin can convert the same documents, for example [Verify.OfficeIMO](https://github.com/VerifyTests/Verify.OfficeIMO), which converts docx, xlsx, and pptx, and optionally the Open XML SDK types. When both are initialized, which one converts a document depends on the order they are initialized in. Verify resolves the two kinds of converter differently:
+
+ * **Types** (`WordprocessingDocument`, `SpreadsheetDocument`, `PresentationDocument`): the converter registered **first** is used.
+ * **Extensions** (`docx`, `xlsx`, `pptx`, as streams or with `VerifyFile`): the converter registered **last** is used.
+
+`VerifyOpenXml.Initialize` registers both kinds. So to have Verify.OpenXml convert everything, initialize it after the other plugin, from the same method (separate `[ModuleInitializer]` methods give no order that is clear from the code):
+
+```cs
+[ModuleInitializer]
+public static void Initialize()
+{
+    VerifyOfficeIMO.Initialize();
+    VerifyOpenXml.Initialize();
+}
+```
+
+That holds as long as the other plugin has not registered the Open XML SDK types (for Verify.OfficeIMO, `VerifyOfficeIMO.RegisterOpenXml`) before `VerifyOpenXml.Initialize` runs. See [Using with Verify.OpenXml](https://github.com/VerifyTests/Verify.OfficeIMO#using-with-verifyopenxml) for the other splits.
+
+
 ### The files
 
 For a test `Samples.VerifyWord` verifying a docx:
