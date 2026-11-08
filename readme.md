@@ -51,7 +51,8 @@ How the files of a document are named, where its text goes, and which of them ar
 ## Sponsors
 
 
-### Entity Framework Extensions<!-- include: sponsors. path: /docs/sponsors.include.md -->
+<!-- include: sponsors. path: /docs/sponsors.include.md -->
+### Entity Framework Extensions
 
 [Entity Framework Extensions](https://entityframework-extensions.net/?utm_source=simoncropp&utm_medium=Verify.OpenXML) is a major sponsor and is proud to contribute to the development this project.
 
