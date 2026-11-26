@@ -4,33 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Verify.OpenXml is a [Verify](https://github.com/VerifyTests/Verify) plugin that converts Excel (xlsx) and Word (docx) documents into human-readable, deterministic formats for snapshot testing. It registers stream and file converters with Verify so that test assertions can be made against Office documents.
+Verify.OpenXml is a [Verify](https://github.com/VerifyTests/Verify) plugin that converts Excel (xlsx), Word (docx) and PowerPoint (pptx) documents into human-readable, deterministic formats for snapshot testing. It registers stream and file converters with Verify so that test assertions can be made against Office documents.
 
 ## Build & Test Commands
 
-**Important:** Commands must be run from the `src/` directory (where `global.json` lives), not from the repo root.
+Run from the repo root, as CI does. `global.json` there pins the SDK and selects Microsoft.Testing.Platform as the `dotnet test` runner, so the solution or project is passed with `--solution` / `--project`, not as a bare path.
 
 ```bash
 # Build
-cd src
-dotnet build --configuration Release
+dotnet build src --configuration Release
 
-# Run all tests — all three test projects. `Tests/Tests.csproj` alone is not the full suite.
-cd src
-dotnet test Verify.OpenXml.slnx
+# Run all tests — all four test projects. `Verify.OpenXml.Tests` alone is not the full suite.
+dotnet test --solution src/Verify.OpenXml.slnx
 
-# Run a single test
-cd src
-dotnet test Tests/Tests.csproj --filter "FullyQualifiedName~Samples.VerifyExcel"
+# Run a single test (TUnit tree filter: /assembly/namespace/class/test)
+dotnet test --project src/Verify.OpenXml.Tests/Verify.OpenXml.Tests.csproj --treenode-filter "/*/*/Samples/VerifyExcel"
 ```
 
-Requires .NET SDK 10.0 (preview). See `src/global.json` for exact version.
+Requires .NET SDK 11.0 (`global.json` pins `11.0.100`, prerelease allowed).
 
-Tests use NUnit and target `net10.0` only. The library targets `net472;net48;net8.0;net9.0;net10.0`.
+Tests use TUnit and target `net11.0` only. The library targets `net472;net48;net8.0;net9.0;net10.0;net11.0`.
 
 ## Architecture
 
-All source lives under `src/`. Build from the `src` directory; the solution is `src/Verify.OpenXml.slnx`.
+All source lives under `src/`; the solution is `src/Verify.OpenXml.slnx`.
 
 ### Library (`src/Verify.OpenXml/`)
 
@@ -43,7 +40,7 @@ Key files:
 - **VerifyOpenXml_Excel.cs** — Excel conversion (stream→CSV, metadata extraction, deterministic binary output)
 - **VerifyOpenXml_Word.cs** — Word conversion (text/font/property extraction, deterministic binary output)
 - **VerifyOpenXml_Powerpoint.cs** — Powerpoint conversion
-- **MorphRenderer.cs** — Backend probing and the rendering of every page to PNG (`net10.0` only)
+- **MorphRenderer.cs** — Backend probing and the rendering of every page to PNG (`net10.0` and later)
 - **Info.cs / WordInfo.cs** — Data models for extracted document metadata
 
 Each stream converter builds its `ConversionResult` with Verify's `PagedConversion`:
@@ -51,7 +48,7 @@ Each stream converter builds its `ConversionResult` with Verify's `PagedConversi
 2. `Source` — a deterministic binary copy of the original document (via `DeterministicIoPackaging`). Naming it as the source is what ties the pages, the sheets and the info file to the document, for comparison and for the diff tool
 3. The text — `Text` for a Word document, which is read whole, and the `text` of `AddPage` for each slide of a presentation
 4. `AddDerived` — a CSV for each Excel sheet, named for the sheet even when it is the only one
-5. On `net10.0` with a Morph backend present, a PNG per rendered page — `AddImages` for Word and Excel, the `image` of `AddPage` for Powerpoint
+5. On `net10.0` and later, with a Morph backend present, a PNG per rendered page — `AddImages` for Word and Excel, the `image` of `AddPage` for Powerpoint
 
 `PagedConversion` names the pages (`page_0001`), places the text, and writes the info file in the shape every paged document has (`Document`, `PageCount`, `Text`, `Pages`). What is produced is decided by Verify's settings, read through it, not by an option of this plugin: `PageText` (in the info, a file of its own, or none), `PagesToInclude`, `ExcludeDerivedTargets("png")` / `("csv")` and `ExcludeTargets("docx")`. Each converter asks before doing the work — `IncludeText`, `RenderingEnabled(conversion)`, `IsDerivedTargetExcluded("csv")`, `IsTargetExcluded` — so nothing left out is produced. The global forms of those settings are tested in a separate project, `src/StaticSettingsTests/` (no text, no rendered pages).
 
@@ -67,11 +64,13 @@ Word text extraction walks the body in document order and treats content control
 
 The deterministic binary output is critical — `DeterministicIoPackaging` ensures identical binary output across .NET runtimes so that `.verified.xlsx`/`.verified.docx` files are stable.
 
-### Tests (`src/Tests/`)
+### Tests (`src/Verify.OpenXml.Tests/`)
 
 - **ModuleInitializer.cs** — Calls `VerifyOpenXml.Initialize()` via `[ModuleInitializer]`
-- **Samples.cs** — Core tests verifying Excel/Word files, streams, and document objects
-- Verified snapshot files (`.verified.txt`, `.verified.csv`, `.verified.xlsx`, `.verified.docx`) live alongside tests
+- **Samples.cs** — Core tests verifying Excel/Word/PowerPoint files, streams, and document objects
+- The unit tests (`*UnitTests.cs`, `ExcelConvertBranchTests.cs`) run in this project only
+- No Morph backend is referenced here, so nothing renders
+- Verified snapshot files (`.verified.txt`, `.verified.csv`, `.verified.xlsx`, `.verified.docx`, `.verified.pptx`) live alongside tests
 
 The module initializers turn on `VerifierSettings.Inline(maxLines: 10, ...)`, but no document test carries a `.Snapshot(...)` literal, and none should. Under that switch Verify never inlines the info file of a document, and a literal in `Samples.cs` could not be shared by the three test projects anyway, whose info files differ by `PageCount`.
 
@@ -87,9 +86,9 @@ When tests fail, Verify produces `.received.*` files showing actual output. Comp
 
 ### Rendering-backend tests (`src/Tests.ImageSharp/`, `src/Tests.Skia/`)
 
-These exist to exercise the two Morph PNG-rendering backends. Each references one backend package and links the test sources from `Tests` (`<Compile Include="..\Tests\**\*.cs">`, excluding the unit-test files and `ModuleInitializer.cs`), so they run the same Samples/Excel/Word tests a third time.
+These exist to exercise the two Morph PNG-rendering backends. Each references one backend package and links the test sources and `sample*` documents from `Verify.OpenXml.Tests` (`<Compile Include="..\Verify.OpenXml.Tests\**\*.cs">`, excluding the unit-test files, `ModuleInitializer.cs` and `GlobalUsings.cs`), so the same snapshot tests run in all three projects. A new test file there is picked up automatically; a new unit-test file has to be added to the `Exclude` list of both projects.
 
-**They keep their own copies of every snapshot** — their `ModuleInitializer` calls `DerivePathInfo` with the project directory. A change to converter output therefore has to be re-verified in all three directories, and `dotnet test Tests/Tests.csproj` going green means nothing about the other two. Regenerate with `dotnet test Verify.OpenXml.slnx`.
+**They keep their own copies of every snapshot** — their `ModuleInitializer` calls `DerivePathInfo` with the project directory. A change to converter output therefore has to be re-verified in all three directories, and `Verify.OpenXml.Tests` going green means nothing about the other two. Regenerate with `dotnet test --solution src/Verify.OpenXml.slnx`.
 
 ### Regenerating snapshots
 
@@ -98,7 +97,7 @@ Two Verify behaviours make snapshots easy to get wrong:
 - The binary packages (`.docx`/`.xlsx`/`.pptx`) are compared through a comparer, not by raw bytes, so a stale verified package that is merely *equivalent* keeps passing and can sit in the repo for a long time.
 - The package is the source of its conversion (`PagedConversion.Source`), so Verify compares it first, and when it differs the info file, the pages and the sheets derived from it skip their comparers and are compared exactly. They are then written out as `.received.*` wherever a byte differs. A blanket `mv *.received.* *.verified.*` will silently rewrite snapshots that a comparer would have passed.
 
-So after changing a converter, delete the affected `.verified.*` in **all three** test directories, regenerate, and then run the suite twice — the second run is what proves the accepted output is reproducible rather than an artifact of the transitional state.
+So after changing a converter, delete the affected `.verified.*` in **every** test directory — `Verify.OpenXml.Tests`, `Tests.Skia`, `Tests.ImageSharp` and `StaticSettingsTests` — regenerate, and then run the suite twice — the second run is what proves the accepted output is reproducible rather than an artifact of the transitional state.
 
 ## Key Dependencies
 
